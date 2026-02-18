@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package protocol;
+
+option go_package = "github.com/zulfikawr/go-search/pkg/protocol";
+
+import "google/protobuf/timestamp.proto";
+
+// Engine defines the supported search engines.
+enum Engine {
+  ENGINE_UNSPECIFIED = 0;
+  ENGINE_GOOGLE = 1;
+  ENGINE_BING = 2;
+  ENGINE_BRAVE = 3;
+  ENGINE_DUCKDUCKGO = 4;
+}
+
+// ErrorCode defines standardized OSP error codes.
+enum ErrorCode {
+  ERROR_CODE_SUCCESS = 0;
+  ERROR_CODE_INVALID_QUERY = 1;
+  ERROR_CODE_WORKER_TIMEOUT = 2;
+  ERROR_CODE_WORKER_DISCONNECT = 3;
+  ERROR_CODE_RATE_LIMITED = 4;
+  ERROR_CODE_CAPTCHA_DETECTED = 5;
+  ERROR_CODE_PROVIDER_DOWN = 6;
+  ERROR_CODE_INTERNAL_ERROR = 7;
+}
+
+// SearchRequest defines the parameters for a search task.
+message SearchRequest {
+  string task_id = 1;
+  string query = 2;
+  Engine engine = 3;
+  int32 count = 4;
+  int32 offset = 5;
+  map<string, string> params = 6;
+  google.protobuf.Timestamp deadline = 7;
+}
+
+// ResultItem matches the Brave Search API result schema.
+message ResultItem {
+  string title = 1;
+  string url = 2;
+  string description = 3;
+  string age = 4;
+  string language = 5;
+  map<string, string> extra = 6;
+}
+
+// SearchResponse defines the results returned by a worker.
+message SearchResponse {
+  string task_id = 1;
+  repeated ResultItem results = 2;
+  uint32 latency_ms = 3;
+  ErrorCode error_code = 4;
+  string error_message = 5;
+}
+
+// RegisterRequest is sent by a worker to join the cluster.
+message RegisterRequest {
+  string worker_id = 1;
+  string version = 2;
+  repeated Engine supported_engines = 3;
+  string public_key = 4; // For mTLS/Signing verification
+}
+
+// RegisterResponse is sent by the master after registration.
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string session_token = 3;
+}
+
+// HeartbeatRequest is sent periodically by the worker.
+message HeartbeatRequest {
+  string worker_id = 1;
+  float cpu_usage = 2;
+  float memory_usage = 3;
+  uint32 active_tasks = 4;
+}
+
+// HeartbeatResponse is sent by the master to acknowledge.
+message HeartbeatResponse {
+  bool ack = 1;
+  google.protobuf.Timestamp next_heartbeat = 2;
+}
+
+// SearchService defines the OSP Master-Worker protocol.
+service SearchService {
+  // Register a new worker node.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Maintain a bidirectional stream for heartbeats and status.
+  rpc Heartbeat(stream HeartbeatRequest) returns (stream HeartbeatResponse);
+
+  // Send a search task to a worker.
+  rpc Fetch(SearchRequest) returns (SearchResponse);
+}
