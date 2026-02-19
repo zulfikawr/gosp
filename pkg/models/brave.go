@@ -1,7 +1,6 @@
 package models
 
 // SearchResponse matches the Brave Search API result schema.
-// This is the model the Master node returns via HTTP JSON.
 type SearchResponse struct {
 	Type  string         `json:"type"`
 	Query QueryMetadata  `json:"query"`
@@ -10,6 +9,11 @@ type SearchResponse struct {
 	Video *VideoResults  `json:"videos,omitempty"`
 	Image *ImageResults  `json:"images,omitempty"`
 	Meta  ResponseMeta   `json:"meta"`
+
+	// OSP Extended Metadata (Opt-in via ?metadata=true)
+	Performance *OSPPerformance `json:"osp_performance,omitempty"`
+	Cluster     *OSPCluster     `json:"osp_cluster,omitempty"`
+	Diagnostics *OSPDiagnostics `json:"osp_diagnostics,omitempty"`
 }
 
 type QueryMetadata struct {
@@ -31,6 +35,35 @@ type WebResult struct {
 	Language    string        `json:"language,omitempty"`
 	Thumbnail   *Thumbnail    `json:"thumbnail,omitempty"`
 	Profile     *ProfileMeta  `json:"profile,omitempty"`
+
+	// OSP Specific Result Signals
+	Signals *OSPSignals `json:"osp_signals,omitempty"`
+}
+
+type OSPSignals struct {
+	Source    string  `json:"source"`
+	WorkerID  string  `json:"worker_id"`
+	Region    string  `json:"region"`
+	Relevance float32 `json:"relevance,omitempty"`
+}
+
+type OSPPerformance struct {
+	WorkerScrapeMs uint32 `json:"worker_scrape_ms"`
+	MasterAggMs    uint32 `json:"master_agg_ms"`
+	TotalLatencyMs uint32 `json:"total_latency_ms"`
+}
+
+type OSPCluster struct {
+	NodesQueried    int    `json:"nodes_queried"`
+	CacheStatus     string `json:"cache_status"`
+	ProtocolVersion string `json:"protocol_version"`
+}
+
+type OSPDiagnostics struct {
+	WorkerID     string `json:"worker_id,omitempty"`
+	TargetEngine string `json:"target_engine,omitempty"`
+	RawError     string `json:"raw_error,omitempty"`
+	TraceID      string `json:"trace_id,omitempty"`
 }
 
 type Thumbnail struct {
@@ -58,5 +91,4 @@ type ImageResults struct {
 type ResponseMeta struct {
 	LatencyMs uint32 `json:"latency_ms"`
 	Total     int    `json:"total"`
-	Cluster   string `json:"cluster,omitempty"`
 }

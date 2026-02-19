@@ -19,6 +19,7 @@ type WorkerNode struct {
 	MemoryUsage      float32
 	ActiveTasks      uint32
 	RemoteAddr       string
+	Region           string
 	
 	// CommandChan is used by the Dispatcher to send tasks to this specific worker.
 	CommandChan chan *protocol.MasterCommand
@@ -56,12 +57,13 @@ func (r *Registry) Register(req *protocol.RegisterRequest, remoteAddr string) {
 			CommandChan: make(chan *protocol.MasterCommand, 10),
 		}
 		r.workers[req.WorkerId] = node
-		logger.Info("new worker registered", "worker_id", req.WorkerId, "addr", remoteAddr)
+		logger.Info("new worker registered", "worker_id", req.WorkerId, "addr", remoteAddr, "engines", req.SupportedEngines)
 	}
 
 	node.Version = req.Version
 	node.SupportedEngines = req.SupportedEngines
 	node.RemoteAddr = remoteAddr
+	node.Region = req.Region
 	node.LastHeartbeat = time.Now()
 
 	metrics.ActiveWorkerCount.Set(float64(len(r.workers)))

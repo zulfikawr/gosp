@@ -21,6 +21,7 @@ type Client struct {
 	masterAddr       string
 	supportedEngines []protocol.Engine
 	creds            credentials.TransportCredentials
+	region           string
 	
 	conn *grpc.ClientConn
 	scrapers map[protocol.Engine]scraper.Engine
@@ -33,6 +34,7 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 		masterAddr:       masterAddr,
 		supportedEngines: engines,
 		creds:            creds,
+		region:           "US-Cloud", // Default region
 		scrapers:         make(map[protocol.Engine]scraper.Engine),
 	}
 
@@ -42,6 +44,8 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 			c.scrapers[e] = scraper.NewGoogleScraper()
 		case protocol.Engine_ENGINE_BRAVE:
 			c.scrapers[e] = scraper.NewBraveScraper()
+		case protocol.Engine_ENGINE_DUCKDUCKGO:
+			c.scrapers[e] = scraper.NewDuckDuckGoScraper()
 		}
 	}
 
@@ -66,20 +70,20 @@ func (c *Client) Run(ctx context.Context) error {
 		WorkerId:         c.id,
 		Version:          c.version,
 		SupportedEngines: c.supportedEngines,
+		Region:           c.region,
 	}
 	
 	_, err = client.Register(ctx, regReq)
 	if err != nil {
 		return fmt.Errorf("registration failed: %w", err)
 	}
-	logger.Info("worker registered successfully", "worker_id", c.id)
+	logger.Info("worker registered successfully", "worker_id", c.id, "region", c.region)
 
 	stream, err := client.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to open stream: %w", err)
 	}
 
-	// NEW: Send an initial status message immediately so the Master can identify us.
 	initialStatus := &protocol.WorkerStatus{
 		WorkerId: c.id,
 	}
@@ -138,19 +142,31 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 				var resp *protocol.SearchResponse
 				if s, exists := c.scrapers[task.Engine]; exists {
 					results, err := s.Search(task.Query, task.Count, task.Offset)
+					
+					// Enrich results with OSP metadata
+					for _, r := range results {
+						r.SourceEngine = task.Engine
+						r.WorkerId = c.id
+						r.WorkerRegion = c.region
+					}
+
 					if err != nil {
 						logger.Error("scrape failed", "error", err, "task_id", task.TaskId)
 						resp = &protocol.SearchResponse{
 							TaskId:        task.TaskId,
 							ErrorCode:     protocol.ErrorCode_ERROR_CODE_INTERNAL_ERROR,
 							ErrorMessage:  err.Error(),
+							WorkerId:      c.id,
+							WorkerRegion:  c.region,
 						}
 					} else {
 						resp = &protocol.SearchResponse{
-							TaskId:    task.TaskId,
-							ErrorCode: protocol.ErrorCode_ERROR_CODE_SUCCESS,
-							Results:   results,
-							LatencyMs: uint32(time.Since(start).Milliseconds()),
+							TaskId:           task.TaskId,
+							ErrorCode:        protocol.ErrorCode_ERROR_CODE_SUCCESS,
+							Results:          results,
+							ScrapeLatencyMs:  uint32(time.Since(start).Milliseconds()),
+							WorkerId:         c.id,
+							WorkerRegion:     c.region,
 						}
 					}
 				} else {
@@ -158,6 +174,8 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 						TaskId:       task.TaskId,
 						ErrorCode:    protocol.ErrorCode_ERROR_CODE_PROVIDER_DOWN,
 						ErrorMessage: "engine not supported by this worker",
+						WorkerId:     c.id,
+						WorkerRegion: c.region,
 					}
 				}
 				

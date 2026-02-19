@@ -12,14 +12,12 @@ import (
 	"github.com/zulfikawr/go-search/pkg/protocol"
 )
 
-// HTTPServer handles public search requests and maps them to OSP tasks.
 type HTTPServer struct {
 	app        *fiber.App
 	dispatcher *Dispatcher
 	aggregator *ResultAggregator
 }
 
-// NewHTTPServer initializes a new Fiber-based HTTP server for the Master node.
 func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
@@ -37,11 +35,9 @@ func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 }
 
 func (s *HTTPServer) setupRoutes() {
-	// Brave API Parity Endpoint
 	s.app.Get("/web/search", s.handleSearch)
 }
 
-// handleSearch implements the /web/search endpoint matching Brave Search API v1.
 func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 	query := c.Query("q")
 	if query == "" {
@@ -50,10 +46,22 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 		})
 	}
 
-	// 1. Prepare OSP Search Request
+	showMetadata := c.Query("metadata") == "true"
 	taskID := uuid.New().String()
-	// Default to Google if not specified, or we could round-robin across multiple engines here.
-	engine := protocol.Engine_ENGINE_GOOGLE 
+	
+	// Engine selection
+	engineStr := c.Query("engine", "duckduckgo") 
+	engine := protocol.Engine_ENGINE_DUCKDUCKGO
+	switch engineStr {
+	case "1", "google":
+		engine = protocol.Engine_ENGINE_GOOGLE
+	case "2", "bing":
+		engine = protocol.Engine_ENGINE_BING
+	case "3", "brave":
+		engine = protocol.Engine_ENGINE_BRAVE
+	case "4", "duckduckgo":
+		engine = protocol.Engine_ENGINE_DUCKDUCKGO
+	}
 	
 	req := &protocol.SearchRequest{
 		TaskId: taskID,
@@ -64,24 +72,30 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 		Params: make(map[string]string),
 	}
 
-	// 2. Dispatch to Workers with a strict timeout (Brave API targets < 1s)
-	ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	start := time.Now()
 	resp, err := s.dispatcher.Dispatch(ctx, req)
+	masterLatency := uint32(time.Since(start).Milliseconds())
+
 	if err != nil {
 		logger.Error("dispatch_failed", "error", err, "query", query)
-		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to fetch results: %v", err),
-		})
+		
+		errResp := fiber.Map{"error": fmt.Sprintf("failed to fetch results: %v", err)}
+		if showMetadata {
+			errResp["osp_diagnostics"] = models.OSPDiagnostics{
+				TargetEngine: engine.String(),
+				RawError:     err.Error(),
+				TraceID:      taskID,
+			}
+		}
+		return c.Status(fiber.StatusServiceUnavailable).JSON(errResp)
 	}
 
-	// 3. Aggregate (if we had multiple sources, we'd dispatch them concurrently)
 	finalResp := s.aggregator.Aggregate(resp)
-	latency := uint32(time.Since(start).Milliseconds())
 
-	// 4. Map to Brave Search API Response Schema
+	// Map to Brave API Schema
 	braveResp := models.SearchResponse{
 		Type: "search",
 		Query: models.QueryMetadata{
@@ -92,25 +106,50 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 			Results: make([]models.WebResult, 0),
 		},
 		Meta: models.ResponseMeta{
-			LatencyMs: latency,
+			LatencyMs: masterLatency,
 			Total:     len(finalResp.Results),
 		},
 	}
 
+	// Inject Results
 	for _, res := range finalResp.Results {
-		braveResp.Web.Results = append(braveResp.Web.Results, models.WebResult{
+		item := models.WebResult{
 			Title:       res.Title,
 			URL:         res.Url,
 			Description: res.Description,
 			Age:         res.Age,
 			Language:    res.Language,
-		})
+		}
+
+		// Optional OSP Signals per result
+		if showMetadata {
+			item.Signals = &models.OSPSignals{
+				Source:   res.SourceEngine.String(),
+				WorkerID: res.WorkerId,
+				Region:   res.WorkerRegion,
+			}
+		}
+
+		braveResp.Web.Results = append(braveResp.Web.Results, item)
+	}
+
+	// Optional OSP Root Metadata
+	if showMetadata {
+		braveResp.Performance = &models.OSPPerformance{
+			WorkerScrapeMs: resp.ScrapeLatencyMs,
+			MasterAggMs:    masterLatency - resp.ScrapeLatencyMs,
+			TotalLatencyMs: masterLatency,
+		}
+		braveResp.Cluster = &models.OSPCluster{
+			NodesQueried:    1,
+			CacheStatus:     "MISS",
+			ProtocolVersion: "v0.1.0",
+		}
 	}
 
 	return c.JSON(braveResp)
 }
 
-// Listen starts the HTTP server.
 func (s *HTTPServer) Listen(addr string) error {
 	logger.Info("HTTP Master API listening", "addr", addr)
 	return s.app.Listen(addr)

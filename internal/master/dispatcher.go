@@ -68,7 +68,7 @@ func (d *Dispatcher) Dispatch(ctx context.Context, req *protocol.SearchRequest) 
 	// 4. Wait for the response from the worker (pushed via HandleResponse).
 	select {
 	case res := <-resChan:
-		metrics.SearchLatency.WithLabelValues(req.Engine.String()).Observe(float64(res.LatencyMs) / 1000.0)
+		metrics.SearchLatency.WithLabelValues(req.Engine.String()).Observe(float64(res.ScrapeLatencyMs) / 1000.0)
 		return res, nil
 	case <-ctx.Done():
 		return nil, fmt.Errorf("task timed out: %w", ctx.Err())

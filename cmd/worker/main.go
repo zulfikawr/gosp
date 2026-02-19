@@ -25,30 +25,27 @@ var (
 func main() {
 	flag.Parse()
 
-	// 1. Generate ID if not provided
 	id := *workerID
 	if id == "" {
 		id = "worker-" + uuid.New().String()[:8]
 	}
 
-	// 2. Setup Credentials
 	var creds credentials.TransportCredentials
 	if *useInsecure {
 		creds = insecure.NewCredentials()
 	} else {
-		// Future: load mTLS certs from pkg/protocol
 		logger.Warn("mTLS not yet configured in CLI, falling back to insecure")
 		creds = insecure.NewCredentials()
 	}
 
-	// 3. Define Supported Engines
+	// Supported Engines (RE-INJECT DUCKDUCKGO)
 	engines := []protocol.Engine{
 		protocol.Engine_ENGINE_GOOGLE,
 		protocol.Engine_ENGINE_BRAVE,
 		protocol.Engine_ENGINE_BING,
+		protocol.Engine_ENGINE_DUCKDUCKGO,
 	}
 
-	// 4. Initialize and Run Worker Client
 	client := worker.NewClient(id, "v0.1.0", *masterAddr, engines, creds)
 	
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -56,7 +53,6 @@ func main() {
 
 	logger.Info("starting OSP worker node", "worker_id", id, "master", *masterAddr)
 
-	// Reconnection Loop
 	for {
 		err := client.Run(ctx)
 		if err == context.Canceled {
@@ -64,7 +60,7 @@ func main() {
 		}
 		if err != nil {
 			logger.Error("worker client failed", "error", err)
-			time.Sleep(5 * time.Second) // Backoff before reconnect
+			time.Sleep(5 * time.Second)
 			logger.Info("reconnecting to master...")
 			continue
 		}
