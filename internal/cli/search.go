@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	"strings"
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/models"
@@ -95,16 +96,29 @@ func runSearch() {
 	json.Unmarshal(body, &searchResp)
 
 	fmt.Printf("GOSP Results for: %s\n", searchQuery)
-	fmt.Println("--------------------------------------------------------------------------------")
+	separator := "----------------------------------------------------------------------------------------------------"
+	fmt.Println(separator)
 	fmt.Printf("%-3s | %-50s | %s\n", "#", "Title", "URL")
-	fmt.Println("--------------------------------------------------------------------------------")
+	fmt.Println(separator)
 	for i, res := range searchResp.Web.Results {
-		fmt.Printf("%-3d | %-50s | %s\n", i+1, truncate(res.Title, 50), res.URL)
+		title := pad(truncate(res.Title, 50), 50)
+		fmt.Printf("%-3d | %s | %s\n", i+1, title, res.URL)
 	}
-	fmt.Println("--------------------------------------------------------------------------------")
+	fmt.Println(separator)
+}
+
+func pad(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) >= n {
+		return s
+	}
+	return s + strings.Repeat(" ", n-len(runes))
 }
 
 func truncate(s string, n int) string {
-	if len(s) <= n { return s }
-	return s[:n] + "..."
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n]) + "..."
 }
