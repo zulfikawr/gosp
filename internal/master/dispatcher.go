@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/zulfikawr/go-search/pkg/logger"
 	"github.com/zulfikawr/go-search/pkg/metrics"

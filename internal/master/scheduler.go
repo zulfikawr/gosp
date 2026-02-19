@@ -42,7 +42,7 @@ func (s *RoundRobinScheduler) NextWorker(engine protocol.Engine) (*WorkerNode, e
 	}
 
 	if len(eligible) == 0 {
-		return nil, protocol.ErrorCode_ERROR_CODE_PROVIDER_DOWN.ToError("no healthy workers support this engine")
+		return nil, ToProtocolError(protocol.ErrorCode_ERROR_CODE_PROVIDER_DOWN, "no healthy workers support this engine")
 	}
 
 	s.mu.Lock()
@@ -54,8 +54,8 @@ func (s *RoundRobinScheduler) NextWorker(engine protocol.Engine) (*WorkerNode, e
 	return eligible[idx], nil
 }
 
-// ToError is a helper to convert ErrorCode to a standard error.
-func (e protocol.ErrorCode) ToError(msg string) error {
+// ToProtocolError is a helper to convert ErrorCode to a standard error.
+func ToProtocolError(e protocol.ErrorCode, msg string) error {
 	return &protocolError{code: e, msg: msg}
 }
 

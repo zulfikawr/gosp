@@ -8,9 +8,9 @@ This document provides a granular, step-by-step task list for the implementation
 ## 2. 🏗 High-Level Infrastructure
 
 ### 2.1 Project Initialization
-- [ ] **Git Setup:** Initialize Git repository and add a comprehensive `.gitignore`.
-- [ ] **Go Setup:** Run `go mod init github.com/zulfikawr/go-search`.
-- [ ] **Directory Structure:** Create the following:
+- [x] **Git Setup:** Initialize Git repository and add a comprehensive `.gitignore`.
+- [x] **Go Setup:** Run `go mod init github.com/zulfikawr/go-search`.
+- [x] **Directory Structure:** Create the following:
     - `cmd/master/main.go` - The entry point for the Master node.
     - `cmd/worker/main.go` - The entry point for the Worker node.
     - `internal/master/` - All private Master logic (handlers, registry, scheduler).
@@ -19,48 +19,48 @@ This document provides a granular, step-by-step task list for the implementation
     - `pkg/protocol/` - gRPC logic and TLS management.
     - `proto/` - Protobuf source files.
     - `scripts/` - Shell scripts for build/proto generation.
-- [ ] **Dependency Management:** Add initial dependencies (`google.golang.org/grpc`, `google.golang.org/protobuf`, `github.com/gofiber/fiber/v2`).
+- [x] **Dependency Management:** Add initial dependencies (`google.golang.org/grpc`, `google.golang.org/protobuf`, `github.com/gofiber/fiber/v2`).
 
 ### 2.2 Logging & Observability
-- [ ] **Logger Implementation:** Wrap `log/slog` in a custom `pkg/logger` that supports JSON formatting and dynamic log levels.
+- [x] **Logger Implementation:** Wrap `log/slog` in a custom `pkg/logger` that supports JSON formatting and dynamic log levels.
 - [ ] **Trace Middleware:** Implement a simple trace ID middleware for Fiber and gRPC to link requests across nodes.
-- [ ] **Metrics Setup:** Integrate `prometheus/client_golang` for P95 latency and worker count tracking.
+- [x] **Metrics Setup:** Integrate `prometheus/client_golang` for P95 latency and worker count tracking.
 
 ---
 
 ## 3. 📡 Protocol Layer (gRPC)
 
 ### 3.1 Protobuf Definition (`proto/search.proto`)
-- [ ] **Message `SearchRequest`:** Include `query`, `engine`, `count`, `offset`, and metadata.
-- [ ] **Message `SearchResponse`:** Include `results` (repeated list of titles/URLs/snippets) and `meta` (latency, source worker).
-- [ ] **Service `SearchService`:**
+- [x] **Message `SearchRequest`:** Include `query`, `engine`, `count`, `offset`, and metadata.
+- [x] **Message `SearchResponse`:** Include `results` (repeated list of titles/URLs/snippets) and `meta` (latency, source worker).
+- [x] **Service `SearchService`:**
     - `rpc Register(RegisterRequest) returns (RegisterResponse)`
     - `rpc Heartbeat(stream HeartbeatRequest) returns (stream HeartbeatResponse)`
     - `rpc Fetch(SearchRequest) returns (SearchResponse)`
-- [ ] **Code Generation:** Create `scripts/gen-proto.sh` and generate Go files.
+- [x] **Code Generation:** Create `scripts/gen-proto.sh` and generate Go files.
 
 ### 3.2 Security (mTLS)
-- [ ] **Certificate Generator:** Implement a Go utility to generate a self-signed CA and worker/master certificates for testing.
-- [ ] **TLS Config:** Create `pkg/protocol/tls.go` to handle loading certs into gRPC credentials.
+- [x] **Certificate Generator:** Implement a Go utility to generate a self-signed CA and worker/master certificates for testing.
+- [x] **TLS Config:** Create `pkg/protocol/tls.go` to handle loading certs into gRPC credentials.
 
 ---
 
 ## 4. 🧠 Master Node Implementation
 
 ### 4.1 Worker Registry (`internal/master/registry.go`)
-- [ ] **Data Structure:** Use a thread-safe `map[string]*WorkerNode`.
-- [ ] **Registration:** Implement the logic to add/update workers upon connection.
-- [ ] **Health Check:** Implement a background goroutine to remove workers that haven't sent a heartbeat for > 60 seconds.
+- [x] **Data Structure:** Use a thread-safe `map[string]*WorkerNode`.
+- [x] **Registration:** Implement the logic to add/update workers upon connection.
+- [x] **Health Check:** Implement a background goroutine to remove workers that haven't sent a heartbeat for > 60 seconds.
 
 ### 4.2 Scheduler & Dispatcher
-- [ ] **Round-Robin Scheduler:** Basic load balancing for search tasks.
-- [ ] **Task Dispatcher:** The logic to select an available worker, send the gRPC `Fetch` call, and handle the response.
-- [ ] **Timeout Handling:** Wrap every worker call in a `context.WithTimeout`.
+- [x] **Round-Robin Scheduler:** Basic load balancing for search tasks.
+- [x] **Task Dispatcher:** The logic to select an available worker, send the gRPC `Fetch` call, and handle the response.
+- [x] **Timeout Handling:** Wrap every worker call in a `context.WithTimeout`.
 
 ### 4.3 Result Aggregator
-- [ ] **Deduplication:** Implement URL-based deduplication using a `map[string]bool`.
-- [ ] **Ranking v1:** A simple heuristic-based ranker to order results from different engines.
-- [ ] **Brave API Mapping:** The final step to convert internal results into the official Brave Search API JSON format.
+- [x] **Deduplication:** Implement URL-based deduplication using a `map[string]bool`.
+- [x] **Ranking v1:** A simple heuristic-based ranker to order results from different engines.
+- [x] **Brave API Mapping:** The final step to convert internal results into the official Brave Search API JSON format.
 
 ### 4.4 HTTP API Layer
 - [ ] **Fiber Server:** Set up the main Fiber app in `cmd/master/main.go`.
