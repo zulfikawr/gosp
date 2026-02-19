@@ -102,6 +102,12 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 }
 
 func runMaster() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	runMasterInternal(ctx)
+}
+
+func runMasterInternal(ctx context.Context) {
 	reg := master.NewRegistry(60 * time.Second)
 	sched := master.NewRoundRobinScheduler(reg)
 	disp := master.NewDispatcher(sched, reg)
@@ -133,9 +139,8 @@ func runMaster() {
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
+	// Block until context is canceled
+	<-ctx.Done()
 
 	logger.Info("Shutting down Master node...")
 	grpcServer.GracefulStop()

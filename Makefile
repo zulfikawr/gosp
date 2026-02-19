@@ -43,20 +43,13 @@ test:
 	@echo "Running tests..."
 	$(GOTEST) -v ./...
 
-## run-master: Run the Master node locally
-run-master: build
-	@echo "Starting GOSP Master..."
-	./$(GOSP_BINARY) master --http :19000 --grpc :19004
+## run: Run both Master and Worker in a single process (Dev Mode)
+run: build
+	@echo "Starting GOSP unified cluster..."
+	./$(GOSP_BINARY) run
 
-## run-worker: Run a Worker node locally
-run-worker: build
-	@echo "Starting GOSP Worker..."
-	./$(GOSP_BINARY) worker --master localhost:19004 --id "local-worker-01"
-
-## demo: Run the integrated demo cluster
-demo: build
-	@echo "Launching GOSP Live Demo..."
-	@./scripts/run-demo.sh
+## demo: Alias for 'run'
+demo: run
 
 ## help: Show this help message
 help:

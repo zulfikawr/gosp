@@ -40,6 +40,12 @@ func init() {
 }
 
 func runWorker() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	runWorkerInternal(ctx)
+}
+
+func runWorkerInternal(ctx context.Context) {
 	id := workerID
 	if id == "" {
 		id = "worker-" + uuid.New().String()[:8]
@@ -62,24 +68,24 @@ func runWorker() {
 
 	client := worker.NewClient(id, "v0.1.0", workerMasterAddr, engines, creds)
 	
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	logger.Info("starting GOSP worker node", "worker_id", id, "master", workerMasterAddr, "region", workerRegion)
 
+	// Reconnection Loop
 	for {
 		err := client.Run(ctx)
-		if err == context.Canceled {
-			break
-		}
 		if err != nil {
-			logger.Error("worker client failed", "error", err)
-			time.Sleep(5 * time.Second)
-			logger.Info("reconnecting to master...")
-			continue
+			// Check if context was canceled
+			select {
+			case <-ctx.Done():
+				logger.Info("GOSP worker node stopped.")
+				return
+			default:
+				logger.Error("worker client failed", "error", err)
+				time.Sleep(5 * time.Second)
+				logger.Info("reconnecting to master...")
+				continue
+			}
 		}
 		break
 	}
-
-	logger.Info("GOSP worker node stopped.")
 }
