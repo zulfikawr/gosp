@@ -72,9 +72,9 @@ This document provides a granular, step-by-step task list for the implementation
 ## 5. 🦾 Worker Node Implementation
 
 ### 5.1 Connectivity & Registration
-- [ ] **gRPC Client:** Implement the persistent connection logic in `internal/worker/client.go`.
-- [ ] **Auto-Registration:** Upon startup, the worker must send its metadata to the Master.
-- [ ] **Heartbeat Stream:** Open a bidirectional gRPC stream for real-time status updates.
+- [x] **gRPC Client:** Implement the persistent connection logic in `internal/worker/client.go`.
+- [x] **Auto-Registration:** Upon startup, the worker must send its metadata to the Master.
+- [x] **Heartbeat Stream:** Open a bidirectional gRPC stream for real-time status updates.
 
 ### 5.2 Scraper Pool (`internal/worker/scraper/`)
 - [ ] **Engine Interface:** Define `Scraper` with a `Search(query) ([]Result, error)` method.

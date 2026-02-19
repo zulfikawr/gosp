@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/zulfikawr/go-search/internal/worker/scraper"
 	"github.com/zulfikawr/go-search/pkg/logger"
 	"github.com/zulfikawr/go-search/pkg/protocol"
 	"google.golang.org/grpc"
@@ -23,17 +24,33 @@ type Client struct {
 	
 	// conn is the active gRPC connection
 	conn *grpc.ClientConn
+
+	// scrapers is a pool of initialized search engines.
+	scrapers map[protocol.Engine]scraper.Engine
 }
 
 // NewClient initializes a new OSP Worker client.
 func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds credentials.TransportCredentials) *Client {
-	return &Client{
+	c := &Client{
 		id:               id,
 		version:          version,
 		masterAddr:       masterAddr,
 		supportedEngines: engines,
 		creds:            creds,
+		scrapers:         make(map[protocol.Engine]scraper.Engine),
 	}
+
+	// Initialize supported scrapers
+	for _, e := range engines {
+		switch e {
+		case protocol.Engine_ENGINE_GOOGLE:
+			c.scrapers[e] = scraper.NewGoogleScraper()
+		case protocol.Engine_ENGINE_BRAVE:
+			c.scrapers[e] = scraper.NewBraveScraper()
+		}
+	}
+
+	return c
 }
 
 // Run starts the worker client lifecycle: Connect -> Register -> Stream.
@@ -92,7 +109,7 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 				
 				status := &protocol.WorkerStatus{
 					WorkerId:    c.id,
-					CpuUsage:    0.0, // Future: implement CPU tracking
+					CpuUsage:    0.0, 
 					MemoryUsage: float32(m.Alloc) / 1024 / 1024, // MB
 					ActiveTasks: 0,
 				}
@@ -121,21 +138,33 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 			}
 
 			if task := cmd.GetTask(); task != nil {
-				logger.Info("received search task", "task_id", task.TaskId, "query", task.Query)
-				// Future Task: Implement actual scraping logic here
+				start := time.Now()
+				logger.Info("received search task", "task_id", task.TaskId, "query", task.Query, "engine", task.Engine)
 				
-				// Mock Response for now
-				resp := &protocol.SearchResponse{
-					TaskId:    task.TaskId,
-					ErrorCode: protocol.ErrorCode_ERROR_CODE_SUCCESS,
-					Results: []*protocol.ResultItem{
-						{
-							Title:       "Mock Result for " + task.Query,
-							Url:         "https://example.com",
-							Description: "This is a placeholder result while scraper logic is being implemented.",
-						},
-					},
-					LatencyMs: 100,
+				var resp *protocol.SearchResponse
+				if s, exists := c.scrapers[task.Engine]; exists {
+					results, err := s.Search(task.Query, task.Count, task.Offset)
+					if err != nil {
+						logger.Error("scrape failed", "error", err, "task_id", task.TaskId)
+						resp = &protocol.SearchResponse{
+							TaskId:        task.TaskId,
+							ErrorCode:     protocol.ErrorCode_ERROR_CODE_INTERNAL_ERROR,
+							ErrorMessage:  err.Error(),
+						}
+					} else {
+						resp = &protocol.SearchResponse{
+							TaskId:    task.TaskId,
+							ErrorCode: protocol.ErrorCode_ERROR_CODE_SUCCESS,
+							Results:   results,
+							LatencyMs: uint32(time.Since(start).Milliseconds()),
+						}
+					}
+				} else {
+					resp = &protocol.SearchResponse{
+						TaskId:       task.TaskId,
+						ErrorCode:    protocol.ErrorCode_ERROR_CODE_PROVIDER_DOWN,
+						ErrorMessage: "engine not supported by this worker",
+					}
 				}
 				
 				status := &protocol.WorkerStatus{
