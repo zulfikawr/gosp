@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -81,7 +82,12 @@ func runSearch() {
 	}
 
 	if searchFormat == "json" {
-		fmt.Println(string(body))
+		var prettyJSON bytes.Buffer
+		if err := json.Indent(&prettyJSON, body, "", "  "); err != nil {
+			fmt.Println(string(body))
+		} else {
+			fmt.Println(prettyJSON.String())
+		}
 		return
 	}
 
@@ -90,8 +96,10 @@ func runSearch() {
 
 	fmt.Printf("GOSP Results for: %s\n", searchQuery)
 	fmt.Println("--------------------------------------------------------------------------------")
+	fmt.Printf("%-3s | %-50s | %s\n", "#", "Title", "URL")
+	fmt.Println("--------------------------------------------------------------------------------")
 	for i, res := range searchResp.Web.Results {
-		fmt.Printf("%-2d | %-50s | %s\n", i+1, truncate(res.Title, 50), res.URL)
+		fmt.Printf("%-3d | %-50s | %s\n", i+1, truncate(res.Title, 50), res.URL)
 	}
 	fmt.Println("--------------------------------------------------------------------------------")
 }
