@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/zulfikawr/gosp/pkg/config"
 )
 
 var (
@@ -34,6 +35,16 @@ func init() {
 }
 
 func runClusterStatus() {
+	// Try to load config
+	cfg, err := config.Load()
+	if err == nil && clusterApiURL == "http://localhost:19000" {
+		port := cfg.HTTPPort
+		if port == "" {
+			port = "19000"
+		}
+		clusterApiURL = "http://localhost:" + port
+	}
+
 	resp, err := http.Get(clusterApiURL + "/cluster/status")
 	if err != nil {
 		fmt.Printf("Error: Failed to connect to Master: %v\n", err)
@@ -43,11 +54,19 @@ func runClusterStatus() {
 
 	body, _ := io.ReadAll(resp.Body)
 	var status map[string]interface{}
-	json.Unmarshal(body, &status)
+	if err := json.Unmarshal(body, &status); err != nil {
+		fmt.Println("Error: Failed to parse cluster status. Is the Master running?")
+		return
+	}
+
+	activeWorkers := status["active_workers"]
+	if activeWorkers == nil {
+		activeWorkers = 0
+	}
 
 	fmt.Println("\nGOSP CLUSTER STATUS")
 	fmt.Println("-------------------")
-	fmt.Printf("Active Workers: %v\n", status["active_workers"])
+	fmt.Printf("Active Workers: %v\n", activeWorkers)
 	fmt.Printf("Master Version: %v\n\n", status["version"])
 
 	workers, ok := status["workers"].([]interface{})

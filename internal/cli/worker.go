@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -49,7 +50,9 @@ func runWorker() {
 func runWorkerInternal(ctx context.Context) {
 	// Try to load config
 	cfg, err := config.Load()
-	if err == nil {
+	if err != nil {
+		fmt.Println("⚠️ Warning: No configuration found. Run 'gosp init' first.")
+	} else {
 		if workerID == "" {
 			workerID = cfg.NodeID
 		}

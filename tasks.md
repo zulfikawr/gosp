@@ -12,6 +12,8 @@ This document provides a granular, step-by-step task list for the implementation
 - [x] **Go Setup:** Run `go mod init github.com/zulfikawr/gosp`.
 - [x] **Directory Structure:** Create standard Go layout.
 - [x] **Dependency Management:** Add initial dependencies (gRPC, Protobuf, Fiber).
+- [x] **Onboarding Wizard:** Implemented `gosp init` with interactive survey and JSON config.
+- [x] **Secure Join Tokens:** Wordlist-based token generation for cluster security.
 
 ### 2.2 Logging & Observability
 - [x] **Logger Implementation:** JSON-structured logging with `log/slog`.

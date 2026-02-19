@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/models"
 )
 
@@ -43,6 +44,16 @@ func init() {
 }
 
 func runSearch() {
+	// Try to load config to get the correct URL
+	cfg, err := config.Load()
+	if err == nil && searchApiURL == "http://localhost:19000" {
+		port := cfg.HTTPPort
+		if port == "" {
+			port = "19000"
+		}
+		searchApiURL = "http://localhost:" + port
+	}
+
 	params := url.Values{}
 	params.Add("q", searchQuery)
 	params.Add("engine", searchEngine)

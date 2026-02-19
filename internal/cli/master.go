@@ -105,7 +105,10 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 func runMaster() {
 	// Try to load config if it exists
 	cfg, err := config.Load()
-	if err == nil {
+	if err != nil {
+		fmt.Println("⚠️ Warning: No configuration found. Run 'gosp init' first for the best experience.")
+		fmt.Println("Starting with default settings...")
+	} else {
 		if masterHttpAddr == ":19000" && cfg.HTTPPort != "" {
 			masterHttpAddr = ":" + cfg.HTTPPort
 		}
