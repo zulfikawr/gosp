@@ -3,11 +3,13 @@ package scraper
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/zulfikawr/go-search/pkg/logger"
 	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/go-search/pkg/stealth"
 )
 
 // GoogleScraper implements the Engine interface for Google Search.
@@ -15,12 +17,11 @@ type GoogleScraper struct {
 	client *http.Client
 }
 
-// NewGoogleScraper initializes a new Google scraper.
+// NewGoogleScraper initializes a new Google scraper using a stealth client.
 func NewGoogleScraper() *GoogleScraper {
 	return &GoogleScraper{
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-		},
+		// Use the stealth client to spoof TLS fingerprinting (JA3)
+		client: stealth.NewStealthClient(10 * time.Second),
 	}
 }
 
@@ -30,16 +31,24 @@ func (s *GoogleScraper) ID() protocol.Engine {
 
 // Search performs a raw HTTP scrape of Google search results.
 func (s *GoogleScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
-	url := fmt.Sprintf("https://www.google.com/search?q=%s&num=%d&start=%d", query, count, offset)
+	searchURL := fmt.Sprintf("https://www.google.com/search?q=%s&num=%d&start=%d", url.QueryEscape(query), count, offset)
 	
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", GetRandomUserAgent())
+	// 1. Set headers that match the TLS fingerprint (Chrome 120+)
+	req.Header.Set("User-Agent", stealth.GetRandomUserAgent())
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Set("DNT", "1")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-Site", "none")
+	req.Header.Set("Sec-Fetch-User", "?1")
 
 	resp, err := s.client.Do(req)
 	if err != nil {

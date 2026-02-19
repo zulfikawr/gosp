@@ -1,0 +1,8 @@
+{"time":"2026-02-19T08:06:15.358664407Z","level":"INFO","msg":"HTTP Master API listening","addr":":19000"}
+{"time":"2026-02-19T08:06:15.358924578Z","level":"INFO","msg":"gRPC Master listening","addr":":19001"}
+{"time":"2026-02-19T08:06:17.363438858Z","level":"INFO","msg":"new worker registered","worker_id":"test-worker-01","addr":"127.0.0.1:36938"}
+{"time":"2026-02-19T08:06:17.364113444Z","level":"INFO","msg":"worker connected via gRPC stream","worker_id":"test-worker-01"}
+{"time":"2026-02-19T08:06:20.364902643Z","level":"DEBUG","msg":"task dispatched to worker","task_id":"0c4fe2e6-d6b8-4adb-99bd-89cdcea98ac6","worker_id":"test-worker-01"}
+{"time":"2026-02-19T08:06:20.63859891Z","level":"INFO","msg":"Shutting down Master node..."}
+{"time":"2026-02-19T08:06:20.641579414Z","level":"INFO","msg":"worker deregistered","worker_id":"test-worker-01"}
+{"time":"2026-02-19T08:06:20.641660378Z","level":"INFO","msg":"Master node stopped."}

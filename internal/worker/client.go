@@ -22,14 +22,10 @@ type Client struct {
 	supportedEngines []protocol.Engine
 	creds            credentials.TransportCredentials
 	
-	// conn is the active gRPC connection
 	conn *grpc.ClientConn
-
-	// scrapers is a pool of initialized search engines.
 	scrapers map[protocol.Engine]scraper.Engine
 }
 
-// NewClient initializes a new OSP Worker client.
 func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds credentials.TransportCredentials) *Client {
 	c := &Client{
 		id:               id,
@@ -40,7 +36,6 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 		scrapers:         make(map[protocol.Engine]scraper.Engine),
 	}
 
-	// Initialize supported scrapers
 	for _, e := range engines {
 		switch e {
 		case protocol.Engine_ENGINE_GOOGLE:
@@ -53,11 +48,8 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 	return c
 }
 
-// Run starts the worker client lifecycle: Connect -> Register -> Stream.
 func (c *Client) Run(ctx context.Context) error {
 	var err error
-	
-	// 1. Establish gRPC Connection
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(c.creds),
 	}
@@ -70,7 +62,6 @@ func (c *Client) Run(ctx context.Context) error {
 
 	client := protocol.NewSearchServiceClient(c.conn)
 
-	// 2. Register with Master
 	regReq := &protocol.RegisterRequest{
 		WorkerId:         c.id,
 		Version:          c.version,
@@ -83,20 +74,25 @@ func (c *Client) Run(ctx context.Context) error {
 	}
 	logger.Info("worker registered successfully", "worker_id", c.id)
 
-	// 3. Open Bidirectional Stream
 	stream, err := client.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to open stream: %w", err)
 	}
 
-	// 4. Start Heartbeat & Task Loop
+	// NEW: Send an initial status message immediately so the Master can identify us.
+	initialStatus := &protocol.WorkerStatus{
+		WorkerId: c.id,
+	}
+	if err := stream.Send(initialStatus); err != nil {
+		return fmt.Errorf("failed to send initial status: %w", err)
+	}
+
 	return c.handleStream(ctx, stream)
 }
 
 func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService_ConnectClient) error {
 	errChan := make(chan error, 2)
 
-	// Go-routine: Send Heartbeats and Status
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
@@ -109,8 +105,7 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 				
 				status := &protocol.WorkerStatus{
 					WorkerId:    c.id,
-					CpuUsage:    0.0, 
-					MemoryUsage: float32(m.Alloc) / 1024 / 1024, // MB
+					MemoryUsage: float32(m.Alloc) / 1024 / 1024,
 					ActiveTasks: 0,
 				}
 				
@@ -124,7 +119,6 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 		}
 	}()
 
-	// Go-routine: Receive Tasks from Master
 	go func() {
 		for {
 			cmd, err := stream.Recv()

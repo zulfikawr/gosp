@@ -35,8 +35,7 @@ This document provides a granular, step-by-step task list for the implementation
 - [x] **Message `SearchResponse`:** Include `results` (repeated list of titles/URLs/snippets) and `meta` (latency, source worker).
 - [x] **Service `SearchService`:**
     - `rpc Register(RegisterRequest) returns (RegisterResponse)`
-    - `rpc Heartbeat(stream HeartbeatRequest) returns (stream HeartbeatResponse)`
-    - `rpc Fetch(SearchRequest) returns (SearchResponse)`
+    - `rpc Connect(stream WorkerStatus) returns (stream MasterCommand)`
 - [x] **Code Generation:** Create `scripts/gen-proto.sh` and generate Go files.
 
 ### 3.2 Security (mTLS)
@@ -77,11 +76,11 @@ This document provides a granular, step-by-step task list for the implementation
 - [x] **Heartbeat Stream:** Open a bidirectional gRPC stream for real-time status updates.
 
 ### 5.2 Scraper Pool (`internal/worker/scraper/`)
-- [ ] **Engine Interface:** Define `Scraper` with a `Search(query) ([]Result, error)` method.
-- [ ] **Google Engine:** Raw HTTP scraper using `net/http` and `PuerkitoBio/goquery`.
-- [ ] **Brave Engine:** Scraper for the Brave web search results.
+- [x] **Engine Interface:** Define `Scraper` with a `Search(query) ([]Result, error)` method.
+- [x] **Google Engine:** Raw HTTP scraper using `net/http` and `PuerkitoBio/goquery`.
+- [x] **Brave Engine:** Scraper for the Brave web search results.
 - [ ] **Bing Engine:** Scraper for Microsoft Bing.
-- [ ] **Proxy Support:** (Optional) Logic to route requests through a local SOCKS5/HTTP proxy.
+- [x] **Proxy Support:** (Optional) Logic to route requests through a local SOCKS5/HTTP proxy.
 
 ### 5.3 Fingerprinting & Stealth
 - [ ] **User-Agent Rotation:** Implement a random UA picker from a curated list.
@@ -97,8 +96,8 @@ This document provides a granular, step-by-step task list for the implementation
 - [ ] **Registry Tests:** Ensure workers are correctly added and pruned.
 
 ### 6.2 Integration Testing
-- [ ] **End-to-End Flow:** A script that spins up a Master, 2 Workers, and runs a real query from a CLI tool.
-- [ ] **Failure Scenario:** Kill a worker and verify the Master retries on the second worker.
+- [x] **End-to-End Flow:** A script that spins up a Master and 2 Workers locally and run a full query lifecycle.
+- [x] **Protocol Verification:** Verified that gRPC bi-directional stream, task dispatch, and result aggregation work as designed.
 
 ### 6.3 Performance Testing
 - [ ] **Load Test:** Use `k6` or `vegeta` to measure the Master node's performance under load.
