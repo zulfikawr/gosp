@@ -63,9 +63,9 @@ This document provides a granular, step-by-step task list for the implementation
 - [x] **Brave API Mapping:** The final step to convert internal results into the official Brave Search API JSON format.
 
 ### 4.4 HTTP API Layer
-- [ ] **Fiber Server:** Set up the main Fiber app in `cmd/master/main.go`.
-- [ ] **Endpoint `/web/search`:** The primary public API endpoint.
-- [ ] **Request Validation:** Use `go-playground/validator` for incoming search parameters.
+- [x] **Fiber Server:** Set up the main Fiber app in `cmd/master/main.go`.
+- [x] **Endpoint `/web/search`:** The primary public API endpoint.
+- [x] **Request Validation:** Use `go-playground/validator` for incoming search parameters.
 
 ---
 
