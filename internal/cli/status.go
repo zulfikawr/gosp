@@ -47,15 +47,17 @@ func showMasterStatus(name string) {
 		isRunning = pid.IsRunning(p)
 	}
 
-	fmt.Printf("\nGOSP MASTER: %s\n", name)
+	fmt.Printf("GOSP MASTER: %s\n", name)
 	fmt.Println("--------------------")
 	statusStr := "OFFLINE"
 	if isRunning { statusStr = "ONLINE" }
 	fmt.Printf("Process:    %s\n", statusStr)
 	fmt.Printf("HTTP Port:  %s\n", cfg.HTTPPort)
-	fmt.Printf("gRPC Port:  %s\n\n", cfg.GRPCPort)
+	fmt.Printf("gRPC Port:  %s\n", cfg.GRPCPort)
 
-	if isRunning { fetchClusterStatus(cfg.HTTPPort) }
+	if isRunning { 
+		fetchClusterStatus(cfg.HTTPPort) 
+	}
 }
 
 func fetchClusterStatus(port string) {
@@ -96,7 +98,7 @@ func showWorkerStatus(id string) {
 		isRunning = pid.IsRunning(p)
 	}
 
-	fmt.Printf("\nGOSP WORKER: %s\n", id)
+	fmt.Printf("GOSP WORKER: %s\n", id)
 	fmt.Println("--------------------")
 	statusStr := "OFFLINE"
 	if isRunning { statusStr = "ONLINE (Connected to "+cfg.MasterURL+")" }

@@ -81,12 +81,12 @@ func runSearch() {
 	var searchResp models.SearchResponse
 	json.Unmarshal(body, &searchResp)
 
-	fmt.Printf("\nGOSP Results for: %s\n", searchQuery)
+	fmt.Printf("GOSP Results for: %s\n", searchQuery)
 	fmt.Println("--------------------------------------------------------------------------------")
 	for i, res := range searchResp.Web.Results {
 		fmt.Printf("%-2d | %-50s | %s\n", i+1, truncate(res.Title, 50), res.URL)
 	}
-	fmt.Println("--------------------------------------------------------------------------------\n")
+	fmt.Println("--------------------------------------------------------------------------------")
 }
 
 func truncate(s string, n int) string {
