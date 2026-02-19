@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 
-	"strings"
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/models"
@@ -101,18 +100,10 @@ func runSearch() {
 	fmt.Printf("%-3s | %-50s | %s\n", "#", "Title", "URL")
 	fmt.Println(separator)
 	for i, res := range searchResp.Web.Results {
-		title := pad(truncate(res.Title, 50), 50)
-		fmt.Printf("%-3d | %s | %s\n", i+1, title, res.URL)
+		title := truncate(res.Title, 50)
+		fmt.Printf("%-3d | %-50s | %s\n", i+1, title, res.URL)
 	}
 	fmt.Println(separator)
-}
-
-func pad(s string, n int) string {
-	runes := []rune(s)
-	if len(runes) >= n {
-		return s
-	}
-	return s + strings.Repeat(" ", n-len(runes))
 }
 
 func truncate(s string, n int) string {
@@ -120,5 +111,5 @@ func truncate(s string, n int) string {
 	if len(runes) <= n {
 		return s
 	}
-	return string(runes[:n]) + "..."
+	return string(runes[:n-3]) + "..."
 }
