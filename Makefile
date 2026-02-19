@@ -48,6 +48,11 @@ run: build
 	@echo "Starting GOSP unified cluster..."
 	./$(GOSP_BINARY) run
 
+## stop: Stop the background GOSP process
+stop: build
+	@echo "Stopping GOSP background process..."
+	./$(GOSP_BINARY) stop
+
 ## demo: Alias for 'run'
 demo: run
 
