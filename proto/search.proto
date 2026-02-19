@@ -46,15 +46,22 @@ message ResultItem {
   string age = 4;
   string language = 5;
   map<string, string> extra = 6;
+  
+  // OSP Metadata (Internal)
+  Engine source_engine = 7;
+  string worker_id = 8;
+  string worker_region = 9;
 }
 
 // SearchResponse defines the results returned by a worker.
 message SearchResponse {
   string task_id = 1;
   repeated ResultItem results = 2;
-  uint32 latency_ms = 3;
+  uint32 scrape_latency_ms = 3; 
   ErrorCode error_code = 4;
   string error_message = 5;
+  string worker_id = 6;
+  string worker_region = 7;
 }
 
 // RegisterRequest is sent by a worker to join the cluster.
@@ -63,6 +70,7 @@ message RegisterRequest {
   string version = 2;
   repeated Engine supported_engines = 3;
   string public_key = 4; 
+  string region = 5; // e.g., US-East, ID-Jakarta
 }
 
 // RegisterResponse is sent by the master after registration.
@@ -92,11 +100,7 @@ message MasterCommand {
 }
 
 // SearchService defines the OSP Master-Worker protocol.
-// Master is the Server. Worker is the Client (for NAT traversal).
 service SearchService {
-  // Register a new worker node.
   rpc Register(RegisterRequest) returns (RegisterResponse);
-
-  // Bi-directional stream for heartbeats, status, and task assignment.
   rpc Connect(stream WorkerStatus) returns (stream MasterCommand);
 }

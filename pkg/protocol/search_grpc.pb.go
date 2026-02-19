@@ -28,11 +28,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // SearchService defines the OSP Master-Worker protocol.
-// Master is the Server. Worker is the Client (for NAT traversal).
 type SearchServiceClient interface {
-	// Register a new worker node.
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
-	// Bi-directional stream for heartbeats, status, and task assignment.
 	Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WorkerStatus, MasterCommand], error)
 }
 
@@ -72,11 +69,8 @@ type SearchService_ConnectClient = grpc.BidiStreamingClient[WorkerStatus, Master
 // for forward compatibility.
 //
 // SearchService defines the OSP Master-Worker protocol.
-// Master is the Server. Worker is the Client (for NAT traversal).
 type SearchServiceServer interface {
-	// Register a new worker node.
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
-	// Bi-directional stream for heartbeats, status, and task assignment.
 	Connect(grpc.BidiStreamingServer[WorkerStatus, MasterCommand]) error
 	mustEmbedUnimplementedSearchServiceServer()
 }

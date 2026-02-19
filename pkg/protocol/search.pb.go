@@ -238,13 +238,17 @@ func (x *SearchRequest) GetDeadline() *timestamppb.Timestamp {
 
 // ResultItem matches the Brave Search API result schema.
 type ResultItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Age           string                 `protobuf:"bytes,4,opt,name=age,proto3" json:"age,omitempty"`
-	Language      string                 `protobuf:"bytes,5,opt,name=language,proto3" json:"language,omitempty"`
-	Extra         map[string]string      `protobuf:"bytes,6,rep,name=extra,proto3" json:"extra,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Title       string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Url         string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Age         string                 `protobuf:"bytes,4,opt,name=age,proto3" json:"age,omitempty"`
+	Language    string                 `protobuf:"bytes,5,opt,name=language,proto3" json:"language,omitempty"`
+	Extra       map[string]string      `protobuf:"bytes,6,rep,name=extra,proto3" json:"extra,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// OSP Metadata (Internal)
+	SourceEngine  Engine `protobuf:"varint,7,opt,name=source_engine,json=sourceEngine,proto3,enum=protocol.Engine" json:"source_engine,omitempty"`
+	WorkerId      string `protobuf:"bytes,8,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
+	WorkerRegion  string `protobuf:"bytes,9,opt,name=worker_region,json=workerRegion,proto3" json:"worker_region,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -321,16 +325,39 @@ func (x *ResultItem) GetExtra() map[string]string {
 	return nil
 }
 
+func (x *ResultItem) GetSourceEngine() Engine {
+	if x != nil {
+		return x.SourceEngine
+	}
+	return Engine_ENGINE_UNSPECIFIED
+}
+
+func (x *ResultItem) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *ResultItem) GetWorkerRegion() string {
+	if x != nil {
+		return x.WorkerRegion
+	}
+	return ""
+}
+
 // SearchResponse defines the results returned by a worker.
 type SearchResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	Results       []*ResultItem          `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
-	LatencyMs     uint32                 `protobuf:"varint,3,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
-	ErrorCode     ErrorCode              `protobuf:"varint,4,opt,name=error_code,json=errorCode,proto3,enum=protocol.ErrorCode" json:"error_code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TaskId          string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	Results         []*ResultItem          `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
+	ScrapeLatencyMs uint32                 `protobuf:"varint,3,opt,name=scrape_latency_ms,json=scrapeLatencyMs,proto3" json:"scrape_latency_ms,omitempty"`
+	ErrorCode       ErrorCode              `protobuf:"varint,4,opt,name=error_code,json=errorCode,proto3,enum=protocol.ErrorCode" json:"error_code,omitempty"`
+	ErrorMessage    string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	WorkerId        string                 `protobuf:"bytes,6,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
+	WorkerRegion    string                 `protobuf:"bytes,7,opt,name=worker_region,json=workerRegion,proto3" json:"worker_region,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SearchResponse) Reset() {
@@ -377,9 +404,9 @@ func (x *SearchResponse) GetResults() []*ResultItem {
 	return nil
 }
 
-func (x *SearchResponse) GetLatencyMs() uint32 {
+func (x *SearchResponse) GetScrapeLatencyMs() uint32 {
 	if x != nil {
-		return x.LatencyMs
+		return x.ScrapeLatencyMs
 	}
 	return 0
 }
@@ -398,6 +425,20 @@ func (x *SearchResponse) GetErrorMessage() string {
 	return ""
 }
 
+func (x *SearchResponse) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *SearchResponse) GetWorkerRegion() string {
+	if x != nil {
+		return x.WorkerRegion
+	}
+	return ""
+}
+
 // RegisterRequest is sent by a worker to join the cluster.
 type RegisterRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
@@ -405,6 +446,7 @@ type RegisterRequest struct {
 	Version          string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	SupportedEngines []Engine               `protobuf:"varint,3,rep,packed,name=supported_engines,json=supportedEngines,proto3,enum=protocol.Engine" json:"supported_engines,omitempty"`
 	PublicKey        string                 `protobuf:"bytes,4,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	Region           string                 `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"` // e.g., US-East, ID-Jakarta
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -463,6 +505,13 @@ func (x *RegisterRequest) GetSupportedEngines() []Engine {
 func (x *RegisterRequest) GetPublicKey() string {
 	if x != nil {
 		return x.PublicKey
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetRegion() string {
+	if x != nil {
+		return x.Region
 	}
 	return ""
 }
@@ -712,7 +761,7 @@ const file_search_proto_rawDesc = "" +
 	"\bdeadline\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x1a9\n" +
 	"\vParamsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf5\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xee\x02\n" +
 	"\n" +
 	"ResultItem\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x10\n" +
@@ -720,25 +769,30 @@ const file_search_proto_rawDesc = "" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x10\n" +
 	"\x03age\x18\x04 \x01(\tR\x03age\x12\x1a\n" +
 	"\blanguage\x18\x05 \x01(\tR\blanguage\x125\n" +
-	"\x05extra\x18\x06 \x03(\v2\x1f.protocol.ResultItem.ExtraEntryR\x05extra\x1a8\n" +
+	"\x05extra\x18\x06 \x03(\v2\x1f.protocol.ResultItem.ExtraEntryR\x05extra\x125\n" +
+	"\rsource_engine\x18\a \x01(\x0e2\x10.protocol.EngineR\fsourceEngine\x12\x1b\n" +
+	"\tworker_id\x18\b \x01(\tR\bworkerId\x12#\n" +
+	"\rworker_region\x18\t \x01(\tR\fworkerRegion\x1a8\n" +
 	"\n" +
 	"ExtraEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd1\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa0\x02\n" +
 	"\x0eSearchResponse\x12\x17\n" +
 	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12.\n" +
-	"\aresults\x18\x02 \x03(\v2\x14.protocol.ResultItemR\aresults\x12\x1d\n" +
-	"\n" +
-	"latency_ms\x18\x03 \x01(\rR\tlatencyMs\x122\n" +
+	"\aresults\x18\x02 \x03(\v2\x14.protocol.ResultItemR\aresults\x12*\n" +
+	"\x11scrape_latency_ms\x18\x03 \x01(\rR\x0fscrapeLatencyMs\x122\n" +
 	"\n" +
 	"error_code\x18\x04 \x01(\x0e2\x13.protocol.ErrorCodeR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"\xa6\x01\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12\x1b\n" +
+	"\tworker_id\x18\x06 \x01(\tR\bworkerId\x12#\n" +
+	"\rworker_region\x18\a \x01(\tR\fworkerRegion\"\xbe\x01\n" +
 	"\x0fRegisterRequest\x12\x1b\n" +
 	"\tworker_id\x18\x01 \x01(\tR\bworkerId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12=\n" +
 	"\x11supported_engines\x18\x03 \x03(\x0e2\x10.protocol.EngineR\x10supportedEngines\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x04 \x01(\tR\tpublicKey\"F\n" +
+	"public_key\x18\x04 \x01(\tR\tpublicKey\x12\x16\n" +
+	"\x06region\x18\x05 \x01(\tR\x06region\"F\n" +
 	"\x10RegisterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\xcf\x01\n" +
@@ -805,20 +859,21 @@ var file_search_proto_depIdxs = []int32{
 	9,  // 1: protocol.SearchRequest.params:type_name -> protocol.SearchRequest.ParamsEntry
 	11, // 2: protocol.SearchRequest.deadline:type_name -> google.protobuf.Timestamp
 	10, // 3: protocol.ResultItem.extra:type_name -> protocol.ResultItem.ExtraEntry
-	3,  // 4: protocol.SearchResponse.results:type_name -> protocol.ResultItem
-	1,  // 5: protocol.SearchResponse.error_code:type_name -> protocol.ErrorCode
-	0,  // 6: protocol.RegisterRequest.supported_engines:type_name -> protocol.Engine
-	4,  // 7: protocol.WorkerStatus.completed_task:type_name -> protocol.SearchResponse
-	2,  // 8: protocol.MasterCommand.task:type_name -> protocol.SearchRequest
-	5,  // 9: protocol.SearchService.Register:input_type -> protocol.RegisterRequest
-	7,  // 10: protocol.SearchService.Connect:input_type -> protocol.WorkerStatus
-	6,  // 11: protocol.SearchService.Register:output_type -> protocol.RegisterResponse
-	8,  // 12: protocol.SearchService.Connect:output_type -> protocol.MasterCommand
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	0,  // 4: protocol.ResultItem.source_engine:type_name -> protocol.Engine
+	3,  // 5: protocol.SearchResponse.results:type_name -> protocol.ResultItem
+	1,  // 6: protocol.SearchResponse.error_code:type_name -> protocol.ErrorCode
+	0,  // 7: protocol.RegisterRequest.supported_engines:type_name -> protocol.Engine
+	4,  // 8: protocol.WorkerStatus.completed_task:type_name -> protocol.SearchResponse
+	2,  // 9: protocol.MasterCommand.task:type_name -> protocol.SearchRequest
+	5,  // 10: protocol.SearchService.Register:input_type -> protocol.RegisterRequest
+	7,  // 11: protocol.SearchService.Connect:input_type -> protocol.WorkerStatus
+	6,  // 12: protocol.SearchService.Register:output_type -> protocol.RegisterResponse
+	8,  // 13: protocol.SearchService.Connect:output_type -> protocol.MasterCommand
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_search_proto_init() }
