@@ -2,8 +2,7 @@
 
 # Variables
 BINARY_DIR=bin
-MASTER_BINARY=$(BINARY_DIR)/master
-WORKER_BINARY=$(BINARY_DIR)/worker
+GOSP_BINARY=$(BINARY_DIR)/gosp
 PROTO_DIR=proto
 PROTO_GEN_DIR=pkg/protocol
 LOG_DIR=logs
@@ -13,20 +12,18 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 
 .PHONY: all build proto clean test run-master run-worker demo help
 
 all: proto build
 
-## build: Build both Master and Worker binaries
+## build: Build the unified GOSP binary
 build:
-	@echo "Building GOSP binaries..."
+	@echo "Building unified GOSP binary..."
 	@mkdir -p $(BINARY_DIR)
-	$(GOBUILD) -o $(MASTER_BINARY) cmd/master/main.go
-	$(GOBUILD) -o $(WORKER_BINARY) cmd/worker/main.go
-	@echo "Done. Binaries are in $(BINARY_DIR)/"
+	$(GOBUILD) -o $(GOSP_BINARY) cmd/gosp/main.go
+	@echo "Done. Binary is at $(GOSP_BINARY)"
 
 ## proto: Generate Go code from Protobuf definitions
 proto:
@@ -49,12 +46,12 @@ test:
 ## run-master: Run the Master node locally
 run-master: build
 	@echo "Starting GOSP Master..."
-	./$(MASTER_BINARY) -http :19000 -grpc :19004
+	./$(GOSP_BINARY) master --http :19000 --grpc :19004
 
 ## run-worker: Run a Worker node locally
 run-worker: build
 	@echo "Starting GOSP Worker..."
-	./$(WORKER_BINARY) -master localhost:19004 -id "local-worker-01"
+	./$(GOSP_BINARY) worker --master localhost:19004 --id "local-worker-01"
 
 ## demo: Run the integrated demo cluster
 demo: build
@@ -63,7 +60,7 @@ demo: build
 
 ## help: Show this help message
 help:
-	@echo "GOSP Development Makefile"
+	@echo "GOSP Unified CLI"
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"

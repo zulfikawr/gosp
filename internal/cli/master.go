@@ -1,8 +1,6 @@
-package main
+package cli
 
 import (
-	"context"
-	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -10,17 +8,33 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/internal/master"
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/protocol"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"context"
 )
 
 var (
-	httpAddr = flag.String("http", ":18789", "HTTP API listen address")
-	grpcAddr = flag.String("grpc", ":50051", "gRPC listen address")
+	masterHttpAddr string
+	masterGrpcAddr string
 )
+
+var masterCmd = &cobra.Command{
+	Use:   "master",
+	Short: "Start the GOSP Master node",
+	Run: func(cmd *cobra.Command, args []string) {
+		runMaster()
+	},
+}
+
+func init() {
+	masterCmd.Flags().StringVar(&masterHttpAddr, "http", ":19000", "HTTP API listen address")
+	masterCmd.Flags().StringVar(&masterGrpcAddr, "grpc", ":19004", "gRPC listen address")
+	rootCmd.AddCommand(masterCmd)
+}
 
 // GRPCServer implements the OSP Master-Worker gRPC protocol.
 type GRPCServer struct {
@@ -40,7 +54,6 @@ func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest
 }
 
 func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error {
-	// 1. Initial status for ID identification
 	status, err := stream.Recv()
 	if err != nil {
 		return err
@@ -54,10 +67,8 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 	logger.Info("worker connected via gRPC stream", "worker_id", workerID)
 	defer s.registry.Deregister(workerID)
 
-	// 2. Bidirectional Loop: Dispatch tasks and receive results
 	errChan := make(chan error, 2)
 
-	// Go-routine: Receive results/heartbeats from worker
 	go func() {
 		for {
 			status, err := stream.Recv()
@@ -72,7 +83,6 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 		}
 	}()
 
-	// Go-routine: Send commands/tasks to worker
 	go func() {
 		for {
 			select {
@@ -91,44 +101,38 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 	return <-errChan
 }
 
-func main() {
-	flag.Parse()
-
-	// 1. Initialize Registry and Scheduler
+func runMaster() {
 	reg := master.NewRegistry(60 * time.Second)
 	sched := master.NewRoundRobinScheduler(reg)
 	disp := master.NewDispatcher(sched, reg)
 	aggr := master.NewResultAggregator()
 
-	// 2. Start gRPC Server
-	lis, err := net.Listen("tcp", *grpcAddr)
+	lis, err := net.Listen("tcp", masterGrpcAddr)
 	if err != nil {
 		logger.Error("failed to listen gRPC", "error", err)
 		os.Exit(1)
 	}
-
+	
 	grpcServer := grpc.NewServer()
 	protocol.RegisterSearchServiceServer(grpcServer, &GRPCServer{
 		registry:   reg,
 		dispatcher: disp,
 	})
-
+	
 	go func() {
-		logger.Info("gRPC Master listening", "addr", *grpcAddr)
+		logger.Info("gRPC Master listening", "addr", masterGrpcAddr)
 		if err := grpcServer.Serve(lis); err != nil {
 			logger.Error("gRPC server failed", "error", err)
 		}
 	}()
 
-	// 3. Start HTTP API Server
 	httpServer := master.NewHTTPServer(disp, aggr)
 	go func() {
-		if err := httpServer.Listen(*httpAddr); err != nil {
+		if err := httpServer.Listen(masterHttpAddr); err != nil {
 			logger.Error("HTTP server failed", "error", err)
 		}
 	}()
 
-	// 4. Graceful Shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop

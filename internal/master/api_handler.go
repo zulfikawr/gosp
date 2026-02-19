@@ -36,6 +36,16 @@ func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 
 func (s *HTTPServer) setupRoutes() {
 	s.app.Get("/web/search", s.handleSearch)
+	s.app.Get("/cluster/status", s.handleClusterStatus)
+}
+
+func (s *HTTPServer) handleClusterStatus(c *fiber.Ctx) error {
+	workers := s.dispatcher.registry.GetHealthyWorkers()
+	return c.JSON(fiber.Map{
+		"active_workers": len(workers),
+		"workers":        workers,
+		"version":        "v0.1.0",
+	})
 }
 
 func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {

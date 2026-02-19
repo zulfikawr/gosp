@@ -1,14 +1,14 @@
-package main
+package cli
 
 import (
 	"context"
-	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/internal/worker"
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/protocol"
@@ -17,28 +17,42 @@ import (
 )
 
 var (
-	masterAddr  = flag.String("master", "localhost:50051", "OSP Master gRPC address")
-	workerID    = flag.String("id", "", "Unique worker ID (optional, will generate if empty)")
-	useInsecure = flag.Bool("insecure", true, "Use insecure gRPC connection (disable for production mTLS)")
+	workerMasterAddr string
+	workerID         string
+	workerInsecure   bool
+	workerRegion     string
 )
 
-func main() {
-	flag.Parse()
+var workerCmd = &cobra.Command{
+	Use:   "worker",
+	Short: "Start a GOSP Worker node",
+	Run: func(cmd *cobra.Command, args []string) {
+		runWorker()
+	},
+}
 
-	id := *workerID
+func init() {
+	workerCmd.Flags().StringVar(&workerMasterAddr, "master", "localhost:19004", "OSP Master gRPC address")
+	workerCmd.Flags().StringVar(&workerID, "id", "", "Unique worker ID")
+	workerCmd.Flags().BoolVar(&workerInsecure, "insecure", true, "Use insecure connection")
+	workerCmd.Flags().StringVar(&workerRegion, "region", "US-Cloud", "Geographic region of this worker")
+	rootCmd.AddCommand(workerCmd)
+}
+
+func runWorker() {
+	id := workerID
 	if id == "" {
 		id = "worker-" + uuid.New().String()[:8]
 	}
 
 	var creds credentials.TransportCredentials
-	if *useInsecure {
+	if workerInsecure {
 		creds = insecure.NewCredentials()
 	} else {
 		logger.Warn("mTLS not yet configured in CLI, falling back to insecure")
 		creds = insecure.NewCredentials()
 	}
 
-	// Supported Engines (RE-INJECT DUCKDUCKGO)
 	engines := []protocol.Engine{
 		protocol.Engine_ENGINE_GOOGLE,
 		protocol.Engine_ENGINE_BRAVE,
@@ -46,12 +60,12 @@ func main() {
 		protocol.Engine_ENGINE_DUCKDUCKGO,
 	}
 
-	client := worker.NewClient(id, "v0.1.0", *masterAddr, engines, creds)
-
+	client := worker.NewClient(id, "v0.1.0", workerMasterAddr, engines, creds)
+	
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger.Info("starting OSP worker node", "worker_id", id, "master", *masterAddr)
+	logger.Info("starting GOSP worker node", "worker_id", id, "master", workerMasterAddr, "region", workerRegion)
 
 	for {
 		err := client.Run(ctx)
@@ -67,5 +81,5 @@ func main() {
 		break
 	}
 
-	logger.Info("OSP worker node stopped.")
+	logger.Info("GOSP worker node stopped.")
 }

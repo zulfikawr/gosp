@@ -1,37 +1,37 @@
 #!/bin/bash
 
-# OSP Live Demo & Experience Script 🦞
-# This script runs a local cluster and lets you query the Master via HTTP.
+# GOSP Live Demo & Experience Script 🦞
+# This script runs a local cluster using the unified binary.
 
 set -e
 
 # 1. Paths and Setup
 cd "$(dirname "$0")/.."
-MASTER_BIN="./bin/master"
-WORKER_BIN="./bin/worker"
+GOSP_BIN="./bin/gosp"
 LOG_DIR="./logs"
 mkdir -p $LOG_DIR
 
 # 2. Cleanup Function
 cleanup() {
     echo ""
-    echo "🦞 Stopping OSP cluster..."
-    kill $MASTER_PID $WORKER_PID 2>/dev/null || true
+    echo "🦞 Stopping GOSP cluster..."
+    pkill -f "$GOSP_BIN master" || true
+    pkill -f "$GOSP_BIN worker" || true
     echo "✨ Cleanup complete."
 }
 trap cleanup EXIT
 
-echo "🚀 Starting Open Search Protocol (OSP) Cluster..."
+echo "🚀 Starting Go OpenSearchProtocol (GOSP) Cluster..."
 
 # 3. Start Master Node (Custom Ports to avoid conflict)
 # HTTP API: 19000 | gRPC: 19004
-$MASTER_BIN -http :19000 -grpc :19004 > $LOG_DIR/master.log 2>&1 &
+$GOSP_BIN master --http :19000 --grpc :19004 > $LOG_DIR/master.log 2>&1 &
 MASTER_PID=$!
 echo "📡 Master API: http://localhost:19000/web/search"
 
 # 4. Start Worker Node
 # Connects to Master gRPC
-$WORKER_BIN -master localhost:19004 -id "worker-local-01" > $LOG_DIR/worker.log 2>&1 &
+$GOSP_BIN worker --master localhost:19004 --id "worker-local-01" > $LOG_DIR/worker.log 2>&1 &
 WORKER_PID=$!
 echo "🦾 Worker 'worker-local-01' connected."
 
@@ -39,10 +39,10 @@ echo "⏳ Waiting for cluster stabilization..."
 sleep 4
 
 echo ""
-echo "🔥 OSP IS ONLINE. You can now test the API."
+echo "🔥 GOSP IS ONLINE. You can now test the API via CLI."
 echo "----------------------------------------------------------------"
-echo "Example Command (Copy & Paste in another terminal):"
-echo "curl -s \"http://localhost:19000/web/search?q=golang&count=5\" | python3 -m json.tool"
+echo "Example Command:"
+echo "./bin/gosp search --query \"golang concurrency\""
 echo "----------------------------------------------------------------"
 echo ""
 echo "Press [CTRL+C] to stop the cluster and exit."
