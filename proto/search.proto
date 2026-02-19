@@ -62,38 +62,41 @@ message RegisterRequest {
   string worker_id = 1;
   string version = 2;
   repeated Engine supported_engines = 3;
-  string public_key = 4; // For mTLS/Signing verification
+  string public_key = 4; 
 }
 
 // RegisterResponse is sent by the master after registration.
 message RegisterResponse {
   bool success = 1;
   string message = 2;
-  string session_token = 3;
 }
 
-// HeartbeatRequest is sent periodically by the worker.
-message HeartbeatRequest {
+// WorkerStatus is sent by the worker to report health and task results.
+message WorkerStatus {
   string worker_id = 1;
   float cpu_usage = 2;
   float memory_usage = 3;
   uint32 active_tasks = 4;
+  
+  // If the worker just finished a task, it includes the result here.
+  SearchResponse completed_task = 5;
 }
 
-// HeartbeatResponse is sent by the master to acknowledge.
-message HeartbeatResponse {
-  bool ack = 1;
-  google.protobuf.Timestamp next_heartbeat = 2;
+// MasterCommand is sent by the master to assign tasks or control the worker.
+message MasterCommand {
+  oneof command {
+    SearchRequest task = 1;
+    bool ping = 2;
+    string disconnect_reason = 3;
+  }
 }
 
 // SearchService defines the OSP Master-Worker protocol.
+// Master is the Server. Worker is the Client (for NAT traversal).
 service SearchService {
   // Register a new worker node.
   rpc Register(RegisterRequest) returns (RegisterResponse);
 
-  // Maintain a bidirectional stream for heartbeats and status.
-  rpc Heartbeat(stream HeartbeatRequest) returns (stream HeartbeatResponse);
-
-  // Send a search task to a worker.
-  rpc Fetch(SearchRequest) returns (SearchResponse);
+  // Bi-directional stream for heartbeats, status, and task assignment.
+  rpc Connect(stream WorkerStatus) returns (stream MasterCommand);
 }

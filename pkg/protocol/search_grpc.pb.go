@@ -19,9 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SearchService_Register_FullMethodName  = "/protocol.SearchService/Register"
-	SearchService_Heartbeat_FullMethodName = "/protocol.SearchService/Heartbeat"
-	SearchService_Fetch_FullMethodName     = "/protocol.SearchService/Fetch"
+	SearchService_Register_FullMethodName = "/protocol.SearchService/Register"
+	SearchService_Connect_FullMethodName  = "/protocol.SearchService/Connect"
 )
 
 // SearchServiceClient is the client API for SearchService service.
@@ -29,13 +28,12 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // SearchService defines the OSP Master-Worker protocol.
+// Master is the Server. Worker is the Client (for NAT traversal).
 type SearchServiceClient interface {
 	// Register a new worker node.
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
-	// Maintain a bidirectional stream for heartbeats and status.
-	Heartbeat(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HeartbeatRequest, HeartbeatResponse], error)
-	// Send a search task to a worker.
-	Fetch(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	// Bi-directional stream for heartbeats, status, and task assignment.
+	Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WorkerStatus, MasterCommand], error)
 }
 
 type searchServiceClient struct {
@@ -56,41 +54,30 @@ func (c *searchServiceClient) Register(ctx context.Context, in *RegisterRequest,
 	return out, nil
 }
 
-func (c *searchServiceClient) Heartbeat(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HeartbeatRequest, HeartbeatResponse], error) {
+func (c *searchServiceClient) Connect(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WorkerStatus, MasterCommand], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SearchService_ServiceDesc.Streams[0], SearchService_Heartbeat_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SearchService_ServiceDesc.Streams[0], SearchService_Connect_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[HeartbeatRequest, HeartbeatResponse]{ClientStream: stream}
+	x := &grpc.GenericClientStream[WorkerStatus, MasterCommand]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SearchService_HeartbeatClient = grpc.BidiStreamingClient[HeartbeatRequest, HeartbeatResponse]
-
-func (c *searchServiceClient) Fetch(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SearchResponse)
-	err := c.cc.Invoke(ctx, SearchService_Fetch_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
+type SearchService_ConnectClient = grpc.BidiStreamingClient[WorkerStatus, MasterCommand]
 
 // SearchServiceServer is the server API for SearchService service.
 // All implementations must embed UnimplementedSearchServiceServer
 // for forward compatibility.
 //
 // SearchService defines the OSP Master-Worker protocol.
+// Master is the Server. Worker is the Client (for NAT traversal).
 type SearchServiceServer interface {
 	// Register a new worker node.
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
-	// Maintain a bidirectional stream for heartbeats and status.
-	Heartbeat(grpc.BidiStreamingServer[HeartbeatRequest, HeartbeatResponse]) error
-	// Send a search task to a worker.
-	Fetch(context.Context, *SearchRequest) (*SearchResponse, error)
+	// Bi-directional stream for heartbeats, status, and task assignment.
+	Connect(grpc.BidiStreamingServer[WorkerStatus, MasterCommand]) error
 	mustEmbedUnimplementedSearchServiceServer()
 }
 
@@ -104,11 +91,8 @@ type UnimplementedSearchServiceServer struct{}
 func (UnimplementedSearchServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedSearchServiceServer) Heartbeat(grpc.BidiStreamingServer[HeartbeatRequest, HeartbeatResponse]) error {
-	return status.Error(codes.Unimplemented, "method Heartbeat not implemented")
-}
-func (UnimplementedSearchServiceServer) Fetch(context.Context, *SearchRequest) (*SearchResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Fetch not implemented")
+func (UnimplementedSearchServiceServer) Connect(grpc.BidiStreamingServer[WorkerStatus, MasterCommand]) error {
+	return status.Error(codes.Unimplemented, "method Connect not implemented")
 }
 func (UnimplementedSearchServiceServer) mustEmbedUnimplementedSearchServiceServer() {}
 func (UnimplementedSearchServiceServer) testEmbeddedByValue()                       {}
@@ -149,30 +133,12 @@ func _SearchService_Register_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SearchService_Heartbeat_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SearchServiceServer).Heartbeat(&grpc.GenericServerStream[HeartbeatRequest, HeartbeatResponse]{ServerStream: stream})
+func _SearchService_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SearchServiceServer).Connect(&grpc.GenericServerStream[WorkerStatus, MasterCommand]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SearchService_HeartbeatServer = grpc.BidiStreamingServer[HeartbeatRequest, HeartbeatResponse]
-
-func _SearchService_Fetch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SearchServiceServer).Fetch(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SearchService_Fetch_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SearchServiceServer).Fetch(ctx, req.(*SearchRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
+type SearchService_ConnectServer = grpc.BidiStreamingServer[WorkerStatus, MasterCommand]
 
 // SearchService_ServiceDesc is the grpc.ServiceDesc for SearchService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -185,15 +151,11 @@ var SearchService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Register",
 			Handler:    _SearchService_Register_Handler,
 		},
-		{
-			MethodName: "Fetch",
-			Handler:    _SearchService_Fetch_Handler,
-		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Heartbeat",
-			Handler:       _SearchService_Heartbeat_Handler,
+			StreamName:    "Connect",
+			Handler:       _SearchService_Connect_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

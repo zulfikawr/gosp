@@ -404,7 +404,7 @@ type RegisterRequest struct {
 	WorkerId         string                 `protobuf:"bytes,1,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
 	Version          string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	SupportedEngines []Engine               `protobuf:"varint,3,rep,packed,name=supported_engines,json=supportedEngines,proto3,enum=protocol.Engine" json:"supported_engines,omitempty"`
-	PublicKey        string                 `protobuf:"bytes,4,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"` // For mTLS/Signing verification
+	PublicKey        string                 `protobuf:"bytes,4,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -472,7 +472,6 @@ type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	SessionToken  string                 `protobuf:"bytes,3,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -521,38 +520,33 @@ func (x *RegisterResponse) GetMessage() string {
 	return ""
 }
 
-func (x *RegisterResponse) GetSessionToken() string {
-	if x != nil {
-		return x.SessionToken
-	}
-	return ""
-}
-
-// HeartbeatRequest is sent periodically by the worker.
-type HeartbeatRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	WorkerId      string                 `protobuf:"bytes,1,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
-	CpuUsage      float32                `protobuf:"fixed32,2,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
-	MemoryUsage   float32                `protobuf:"fixed32,3,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
-	ActiveTasks   uint32                 `protobuf:"varint,4,opt,name=active_tasks,json=activeTasks,proto3" json:"active_tasks,omitempty"`
+// WorkerStatus is sent by the worker to report health and task results.
+type WorkerStatus struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	WorkerId    string                 `protobuf:"bytes,1,opt,name=worker_id,json=workerId,proto3" json:"worker_id,omitempty"`
+	CpuUsage    float32                `protobuf:"fixed32,2,opt,name=cpu_usage,json=cpuUsage,proto3" json:"cpu_usage,omitempty"`
+	MemoryUsage float32                `protobuf:"fixed32,3,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
+	ActiveTasks uint32                 `protobuf:"varint,4,opt,name=active_tasks,json=activeTasks,proto3" json:"active_tasks,omitempty"`
+	// If the worker just finished a task, it includes the result here.
+	CompletedTask *SearchResponse `protobuf:"bytes,5,opt,name=completed_task,json=completedTask,proto3" json:"completed_task,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeartbeatRequest) Reset() {
-	*x = HeartbeatRequest{}
+func (x *WorkerStatus) Reset() {
+	*x = WorkerStatus{}
 	mi := &file_search_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeartbeatRequest) String() string {
+func (x *WorkerStatus) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeartbeatRequest) ProtoMessage() {}
+func (*WorkerStatus) ProtoMessage() {}
 
-func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
+func (x *WorkerStatus) ProtoReflect() protoreflect.Message {
 	mi := &file_search_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -564,62 +558,73 @@ func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
-func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WorkerStatus.ProtoReflect.Descriptor instead.
+func (*WorkerStatus) Descriptor() ([]byte, []int) {
 	return file_search_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *HeartbeatRequest) GetWorkerId() string {
+func (x *WorkerStatus) GetWorkerId() string {
 	if x != nil {
 		return x.WorkerId
 	}
 	return ""
 }
 
-func (x *HeartbeatRequest) GetCpuUsage() float32 {
+func (x *WorkerStatus) GetCpuUsage() float32 {
 	if x != nil {
 		return x.CpuUsage
 	}
 	return 0
 }
 
-func (x *HeartbeatRequest) GetMemoryUsage() float32 {
+func (x *WorkerStatus) GetMemoryUsage() float32 {
 	if x != nil {
 		return x.MemoryUsage
 	}
 	return 0
 }
 
-func (x *HeartbeatRequest) GetActiveTasks() uint32 {
+func (x *WorkerStatus) GetActiveTasks() uint32 {
 	if x != nil {
 		return x.ActiveTasks
 	}
 	return 0
 }
 
-// HeartbeatResponse is sent by the master to acknowledge.
-type HeartbeatResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ack           bool                   `protobuf:"varint,1,opt,name=ack,proto3" json:"ack,omitempty"`
-	NextHeartbeat *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=next_heartbeat,json=nextHeartbeat,proto3" json:"next_heartbeat,omitempty"`
+func (x *WorkerStatus) GetCompletedTask() *SearchResponse {
+	if x != nil {
+		return x.CompletedTask
+	}
+	return nil
+}
+
+// MasterCommand is sent by the master to assign tasks or control the worker.
+type MasterCommand struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Command:
+	//
+	//	*MasterCommand_Task
+	//	*MasterCommand_Ping
+	//	*MasterCommand_DisconnectReason
+	Command       isMasterCommand_Command `protobuf_oneof:"command"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeartbeatResponse) Reset() {
-	*x = HeartbeatResponse{}
+func (x *MasterCommand) Reset() {
+	*x = MasterCommand{}
 	mi := &file_search_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeartbeatResponse) String() string {
+func (x *MasterCommand) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeartbeatResponse) ProtoMessage() {}
+func (*MasterCommand) ProtoMessage() {}
 
-func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
+func (x *MasterCommand) ProtoReflect() protoreflect.Message {
 	mi := &file_search_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,24 +636,66 @@ func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
-func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MasterCommand.ProtoReflect.Descriptor instead.
+func (*MasterCommand) Descriptor() ([]byte, []int) {
 	return file_search_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *HeartbeatResponse) GetAck() bool {
+func (x *MasterCommand) GetCommand() isMasterCommand_Command {
 	if x != nil {
-		return x.Ack
+		return x.Command
+	}
+	return nil
+}
+
+func (x *MasterCommand) GetTask() *SearchRequest {
+	if x != nil {
+		if x, ok := x.Command.(*MasterCommand_Task); ok {
+			return x.Task
+		}
+	}
+	return nil
+}
+
+func (x *MasterCommand) GetPing() bool {
+	if x != nil {
+		if x, ok := x.Command.(*MasterCommand_Ping); ok {
+			return x.Ping
+		}
 	}
 	return false
 }
 
-func (x *HeartbeatResponse) GetNextHeartbeat() *timestamppb.Timestamp {
+func (x *MasterCommand) GetDisconnectReason() string {
 	if x != nil {
-		return x.NextHeartbeat
+		if x, ok := x.Command.(*MasterCommand_DisconnectReason); ok {
+			return x.DisconnectReason
+		}
 	}
-	return nil
+	return ""
 }
+
+type isMasterCommand_Command interface {
+	isMasterCommand_Command()
+}
+
+type MasterCommand_Task struct {
+	Task *SearchRequest `protobuf:"bytes,1,opt,name=task,proto3,oneof"`
+}
+
+type MasterCommand_Ping struct {
+	Ping bool `protobuf:"varint,2,opt,name=ping,proto3,oneof"`
+}
+
+type MasterCommand_DisconnectReason struct {
+	DisconnectReason string `protobuf:"bytes,3,opt,name=disconnect_reason,json=disconnectReason,proto3,oneof"`
+}
+
+func (*MasterCommand_Task) isMasterCommand_Command() {}
+
+func (*MasterCommand_Ping) isMasterCommand_Command() {}
+
+func (*MasterCommand_DisconnectReason) isMasterCommand_Command() {}
 
 var File_search_proto protoreflect.FileDescriptor
 
@@ -691,19 +738,21 @@ const file_search_proto_rawDesc = "" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12=\n" +
 	"\x11supported_engines\x18\x03 \x03(\x0e2\x10.protocol.EngineR\x10supportedEngines\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x04 \x01(\tR\tpublicKey\"k\n" +
+	"public_key\x18\x04 \x01(\tR\tpublicKey\"F\n" +
 	"\x10RegisterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
-	"\rsession_token\x18\x03 \x01(\tR\fsessionToken\"\x92\x01\n" +
-	"\x10HeartbeatRequest\x12\x1b\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xcf\x01\n" +
+	"\fWorkerStatus\x12\x1b\n" +
 	"\tworker_id\x18\x01 \x01(\tR\bworkerId\x12\x1b\n" +
 	"\tcpu_usage\x18\x02 \x01(\x02R\bcpuUsage\x12!\n" +
 	"\fmemory_usage\x18\x03 \x01(\x02R\vmemoryUsage\x12!\n" +
-	"\factive_tasks\x18\x04 \x01(\rR\vactiveTasks\"h\n" +
-	"\x11HeartbeatResponse\x12\x10\n" +
-	"\x03ack\x18\x01 \x01(\bR\x03ack\x12A\n" +
-	"\x0enext_heartbeat\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\rnextHeartbeat*m\n" +
+	"\factive_tasks\x18\x04 \x01(\rR\vactiveTasks\x12?\n" +
+	"\x0ecompleted_task\x18\x05 \x01(\v2\x18.protocol.SearchResponseR\rcompletedTask\"\x8e\x01\n" +
+	"\rMasterCommand\x12-\n" +
+	"\x04task\x18\x01 \x01(\v2\x17.protocol.SearchRequestH\x00R\x04task\x12\x14\n" +
+	"\x04ping\x18\x02 \x01(\bH\x00R\x04ping\x12-\n" +
+	"\x11disconnect_reason\x18\x03 \x01(\tH\x00R\x10disconnectReasonB\t\n" +
+	"\acommand*m\n" +
 	"\x06Engine\x12\x16\n" +
 	"\x12ENGINE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rENGINE_GOOGLE\x10\x01\x12\x0f\n" +
@@ -718,11 +767,10 @@ const file_search_proto_rawDesc = "" +
 	"\x17ERROR_CODE_RATE_LIMITED\x10\x04\x12\x1f\n" +
 	"\x1bERROR_CODE_CAPTCHA_DETECTED\x10\x05\x12\x1c\n" +
 	"\x18ERROR_CODE_PROVIDER_DOWN\x10\x06\x12\x1d\n" +
-	"\x19ERROR_CODE_INTERNAL_ERROR\x10\a2\xd8\x01\n" +
+	"\x19ERROR_CODE_INTERNAL_ERROR\x10\a2\x92\x01\n" +
 	"\rSearchService\x12A\n" +
-	"\bRegister\x12\x19.protocol.RegisterRequest\x1a\x1a.protocol.RegisterResponse\x12H\n" +
-	"\tHeartbeat\x12\x1a.protocol.HeartbeatRequest\x1a\x1b.protocol.HeartbeatResponse(\x010\x01\x12:\n" +
-	"\x05Fetch\x12\x17.protocol.SearchRequest\x1a\x18.protocol.SearchResponseB-Z+github.com/zulfikawr/go-search/pkg/protocolb\x06proto3"
+	"\bRegister\x12\x19.protocol.RegisterRequest\x1a\x1a.protocol.RegisterResponse\x12>\n" +
+	"\aConnect\x12\x16.protocol.WorkerStatus\x1a\x17.protocol.MasterCommand(\x010\x01B-Z+github.com/zulfikawr/go-search/pkg/protocolb\x06proto3"
 
 var (
 	file_search_proto_rawDescOnce sync.Once
@@ -746,8 +794,8 @@ var file_search_proto_goTypes = []any{
 	(*SearchResponse)(nil),        // 4: protocol.SearchResponse
 	(*RegisterRequest)(nil),       // 5: protocol.RegisterRequest
 	(*RegisterResponse)(nil),      // 6: protocol.RegisterResponse
-	(*HeartbeatRequest)(nil),      // 7: protocol.HeartbeatRequest
-	(*HeartbeatResponse)(nil),     // 8: protocol.HeartbeatResponse
+	(*WorkerStatus)(nil),          // 7: protocol.WorkerStatus
+	(*MasterCommand)(nil),         // 8: protocol.MasterCommand
 	nil,                           // 9: protocol.SearchRequest.ParamsEntry
 	nil,                           // 10: protocol.ResultItem.ExtraEntry
 	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
@@ -760,24 +808,28 @@ var file_search_proto_depIdxs = []int32{
 	3,  // 4: protocol.SearchResponse.results:type_name -> protocol.ResultItem
 	1,  // 5: protocol.SearchResponse.error_code:type_name -> protocol.ErrorCode
 	0,  // 6: protocol.RegisterRequest.supported_engines:type_name -> protocol.Engine
-	11, // 7: protocol.HeartbeatResponse.next_heartbeat:type_name -> google.protobuf.Timestamp
-	5,  // 8: protocol.SearchService.Register:input_type -> protocol.RegisterRequest
-	7,  // 9: protocol.SearchService.Heartbeat:input_type -> protocol.HeartbeatRequest
-	2,  // 10: protocol.SearchService.Fetch:input_type -> protocol.SearchRequest
+	4,  // 7: protocol.WorkerStatus.completed_task:type_name -> protocol.SearchResponse
+	2,  // 8: protocol.MasterCommand.task:type_name -> protocol.SearchRequest
+	5,  // 9: protocol.SearchService.Register:input_type -> protocol.RegisterRequest
+	7,  // 10: protocol.SearchService.Connect:input_type -> protocol.WorkerStatus
 	6,  // 11: protocol.SearchService.Register:output_type -> protocol.RegisterResponse
-	8,  // 12: protocol.SearchService.Heartbeat:output_type -> protocol.HeartbeatResponse
-	4,  // 13: protocol.SearchService.Fetch:output_type -> protocol.SearchResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	8,  // 12: protocol.SearchService.Connect:output_type -> protocol.MasterCommand
+	11, // [11:13] is the sub-list for method output_type
+	9,  // [9:11] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_search_proto_init() }
 func file_search_proto_init() {
 	if File_search_proto != nil {
 		return
+	}
+	file_search_proto_msgTypes[6].OneofWrappers = []any{
+		(*MasterCommand_Task)(nil),
+		(*MasterCommand_Ping)(nil),
+		(*MasterCommand_DisconnectReason)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
