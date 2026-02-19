@@ -824,7 +824,7 @@ const file_search_proto_rawDesc = "" +
 	"\x19ERROR_CODE_INTERNAL_ERROR\x10\a2\x92\x01\n" +
 	"\rSearchService\x12A\n" +
 	"\bRegister\x12\x19.protocol.RegisterRequest\x1a\x1a.protocol.RegisterResponse\x12>\n" +
-	"\aConnect\x12\x16.protocol.WorkerStatus\x1a\x17.protocol.MasterCommand(\x010\x01B-Z+github.com/zulfikawr/go-search/pkg/protocolb\x06proto3"
+	"\aConnect\x12\x16.protocol.WorkerStatus\x1a\x17.protocol.MasterCommand(\x010\x01B(Z&github.com/zulfikawr/gosp/pkg/protocolb\x06proto3"
 
 var (
 	file_search_proto_rawDescOnce sync.Once

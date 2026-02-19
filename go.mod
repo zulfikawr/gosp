@@ -1,4 +1,4 @@
-module github.com/zulfikawr/go-search
+module github.com/zulfikawr/gosp
 
 go 1.25.0
 

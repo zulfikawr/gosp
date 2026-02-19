@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/zulfikawr/go-search/internal/worker"
-	"github.com/zulfikawr/go-search/pkg/logger"
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/internal/worker"
+	"github.com/zulfikawr/gosp/pkg/logger"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )

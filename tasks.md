@@ -1,7 +1,7 @@
-# Tasks: OpenSearchProtocol (OSP)
+# Tasks: GOSP (OSP)
 
 ## 1. Executive Summary
-This document provides a granular, step-by-step task list for the implementation of the OpenSearchProtocol (OSP). The tasks are categorized by system module and project phase, following Go best practices and a distributed architecture.
+This document provides a granular, step-by-step task list for the implementation of the GOSP (OSP). The tasks are categorized by system module and project phase, following Go best practices and a distributed architecture.
 
 ---
 
@@ -9,7 +9,7 @@ This document provides a granular, step-by-step task list for the implementation
 
 ### 2.1 Project Initialization
 - [x] **Git Setup:** Initialize Git repository and add a comprehensive `.gitignore`.
-- [x] **Go Setup:** Run `go mod init github.com/zulfikawr/go-search`.
+- [x] **Go Setup:** Run `go mod init github.com/zulfikawr/gosp`.
 - [x] **Directory Structure:** Create standard Go layout.
 - [x] **Dependency Management:** Add initial dependencies (gRPC, Protobuf, Fiber).
 

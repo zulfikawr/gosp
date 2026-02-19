@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zulfikawr/go-search/pkg/logger"
-	"github.com/zulfikawr/go-search/pkg/metrics"
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/logger"
+	"github.com/zulfikawr/gosp/pkg/metrics"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 )
 
 // WorkerNode represents a connected worker node in the cluster.

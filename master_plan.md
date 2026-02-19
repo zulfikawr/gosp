@@ -1,7 +1,7 @@
-# Master Plan: OpenSearchProtocol (OSP)
+# Master Plan: GOSP (OSP)
 
 ## 1. Executive Summary
-This document outlines the multi-phase engineering roadmap for the OpenSearchProtocol (OSP). OSP aims to disrupt the search API market by creating a distributed, community-powered network of search scrapers. The plan focuses on building a resilient, high-performance protocol in Go that can replace the Brave Search API as an industry standard.
+This document outlines the multi-phase engineering roadmap for the GOSP (OSP). OSP aims to disrupt the search API market by creating a distributed, community-powered network of search scrapers. The plan focuses on building a resilient, high-performance protocol in Go that can replace the Brave Search API as an industry standard.
 
 ---
 

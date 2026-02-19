@@ -3,7 +3,7 @@ package master
 import (
 	"sync"
 
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 )
 
 // Scheduler defines the interface for worker selection strategies.

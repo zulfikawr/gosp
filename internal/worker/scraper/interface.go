@@ -1,7 +1,7 @@
 package scraper
 
 import (
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 )
 
 // Result represents a single search result from any engine.

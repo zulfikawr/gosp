@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/zulfikawr/go-search/pkg/logger"
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/logger"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 )
 
 // DuckDuckGoScraper implements the Engine interface for DuckDuckGo (HTML version).

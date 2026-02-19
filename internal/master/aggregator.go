@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zulfikawr/go-search/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/protocol"
 )
 
 // ResultAggregator handles merging and deduplicating results from multiple workers/engines.

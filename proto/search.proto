@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protocol;
 
-option go_package = "github.com/zulfikawr/go-search/pkg/protocol";
+option go_package = "github.com/zulfikawr/gosp/pkg/protocol";
 
 import "google/protobuf/timestamp.proto";
 

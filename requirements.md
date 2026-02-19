@@ -1,7 +1,7 @@
-# OpenSearchProtocol (OSP): Technical Requirements Specification
+# GOSP (OSP): Technical Requirements Specification
 
 ## 1. Project Overview
-OpenSearchProtocol (OSP) is a distributed, high-performance, and decentralized search scraping protocol written in Go. Its goal is to provide a free, open-source alternative to the Brave Search API by leveraging a network of volunteer-operated worker nodes running on residential IP addresses.
+GOSP (OSP) is a distributed, high-performance, and decentralized search scraping protocol written in Go. Its goal is to provide a free, open-source alternative to the Brave Search API by leveraging a network of volunteer-operated worker nodes running on residential IP addresses.
 
 ### 1.1 Core Mission
 - **Decentralization:** No single point of failure for search data acquisition.
