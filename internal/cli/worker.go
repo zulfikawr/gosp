@@ -4,78 +4,119 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/internal/worker"
 	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/logger"
+	"github.com/zulfikawr/gosp/pkg/pid"
 	"github.com/zulfikawr/gosp/pkg/protocol"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
-	workerMasterAddr string
-	workerID         string
-	workerInsecure   bool
-	workerRegion     string
+	workerNoDaemon bool
 )
 
 var workerCmd = &cobra.Command{
 	Use:   "worker",
-	Short: "Start a GOSP Worker node",
-	Run: func(cmd *cobra.Command, args []string) {
-		runWorker()
-	},
+	Short: "Manage Worker nodes (The Scrapers)",
 }
 
 func init() {
-	workerCmd.Flags().StringVar(&workerMasterAddr, "master", "localhost:19004", "OSP Master gRPC address")
-	workerCmd.Flags().StringVar(&workerID, "id", "", "Unique worker ID")
-	workerCmd.Flags().BoolVar(&workerInsecure, "insecure", true, "Use insecure connection")
-	workerCmd.Flags().StringVar(&workerRegion, "region", "US-Cloud", "Geographic region of this worker")
+	workerCmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List all Worker profiles",
+		Run: func(cmd *cobra.Command, args []string) {
+			list, _ := config.ListWorkers()
+			fmt.Println("GOSP WORKER PROFILES")
+			fmt.Println("--------------------")
+			for _, id := range list {
+				fmt.Println("-", id)
+			}
+		},
+	})
+
+	workerCmd.AddCommand(&cobra.Command{
+		Use:   "create",
+		Short: "Create a new Worker profile",
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg := &config.WorkerConfig{}
+			survey.AskOne(&survey.Input{Message: "Worker ID:", Default: "local-01"}, &cfg.ID)
+			survey.AskOne(&survey.Input{Message: "Master gRPC URL:", Default: "localhost:19004"}, &cfg.MasterURL)
+			survey.AskOne(&survey.Input{Message: "Region:", Default: "US-Cloud"}, &cfg.Region)
+			survey.AskOne(&survey.Input{Message: "Join Token (optional):"}, &cfg.JoinToken)
+			config.SaveWorker(cfg)
+			fmt.Println("✅ Worker profile created.")
+		},
+	})
+
+	runCmd := &cobra.Command{
+		Use:   "run [profile]",
+		Short: "Start a Worker node",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			id := "local-01"
+			if len(args) > 0 { id = args[0] }
+			if !workerNoDaemon {
+				startWorkerDaemon(id)
+				return
+			}
+			runWorkerService(id)
+		},
+	}
+	runCmd.Flags().BoolVar(&workerNoDaemon, "no-daemon", false, "Run in foreground")
+	workerCmd.AddCommand(runCmd)
+
+	workerCmd.AddCommand(&cobra.Command{
+		Use:   "stop [profile]",
+		Short: "Stop a running Worker node",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			id := "local-01"
+			if len(args) > 0 { id = args[0] }
+			stopService("worker", id)
+		},
+	})
+
+	workerCmd.AddCommand(&cobra.Command{
+		Use:   "delete [profile]",
+		Short: "Delete a Worker profile",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			config.DeleteWorker(args[0])
+			fmt.Printf("🗑 Worker profile '%s' deleted.\n", args[0])
+		},
+	})
+
 	rootCmd.AddCommand(workerCmd)
 }
 
-func runWorker() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	runWorkerInternal(ctx)
+func startWorkerDaemon(id string) {
+	cmd := exec.Command(os.Args[0], "worker", "run", id, "--no-daemon")
+	cmd.Start()
+	fmt.Printf("🚀 Worker '%s' connected in background (PID: %d)\n", id, cmd.Process.Pid)
+	os.Exit(0)
 }
 
-func runWorkerInternal(ctx context.Context) {
-	// Try to load config
-	cfg, err := config.Load()
+func runWorkerService(id string) {
+	cfg, err := config.LoadWorker(id)
 	if err != nil {
-		fmt.Println("⚠️ Warning: No configuration found. Run 'gosp init' first.")
-	} else {
-		if workerID == "" {
-			workerID = cfg.NodeID
-		}
-		if workerMasterAddr == "localhost:19004" && cfg.MasterURL != "" {
-			workerMasterAddr = cfg.MasterURL
-		}
-		if workerRegion == "US-Cloud" && cfg.Region != "" {
-			workerRegion = cfg.Region
-		}
+		fmt.Printf("Error: Profile '%s' not found.\n", id)
+		os.Exit(1)
 	}
 
-	id := workerID
-	if id == "" {
-		id = "worker-" + uuid.New().String()[:8]
-	}
+	pidPath := config.GetPIDPath("worker", id)
+	pid.WritePID(pidPath)
+	defer pid.RemovePID(pidPath)
 
-	var creds credentials.TransportCredentials
-	if workerInsecure {
-		creds = insecure.NewCredentials()
-	} else {
-		logger.Warn("mTLS not yet configured in CLI, falling back to insecure")
-		creds = insecure.NewCredentials()
-	}
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
 	engines := []protocol.Engine{
 		protocol.Engine_ENGINE_GOOGLE,
@@ -84,26 +125,23 @@ func runWorkerInternal(ctx context.Context) {
 		protocol.Engine_ENGINE_DUCKDUCKGO,
 	}
 
-	client := worker.NewClient(id, "v0.1.0", workerMasterAddr, engines, creds)
+	client := worker.NewClient(cfg.ID, "v0.1.0", cfg.MasterURL, engines, insecure.NewCredentials())
 	
-	logger.Info("starting GOSP worker node", "worker_id", id, "master", workerMasterAddr, "region", workerRegion)
-
-	// Reconnection Loop
-	for {
-		err := client.Run(ctx)
-		if err != nil {
-			// Check if context was canceled
-			select {
-			case <-ctx.Done():
-				logger.Info("GOSP worker node stopped.")
-				return
-			default:
-				logger.Error("worker client failed", "error", err)
-				time.Sleep(5 * time.Second)
-				logger.Info("reconnecting to master...")
-				continue
+	go func() {
+		for {
+			err := client.Run(ctx)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					logger.Error("worker failed, reconnecting...", "error", err)
+					time.Sleep(5 * time.Second)
+				}
 			}
 		}
-		break
-	}
+	}()
+
+	<-ctx.Done()
+	logger.Info("Worker node stopped.")
 }

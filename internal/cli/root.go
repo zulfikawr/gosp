@@ -5,13 +5,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/zulfikawr/gosp/pkg/config"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "gosp",
-	Short: "GOSP (Go OpenSearchProtocol) - A distributed search protocol",
-	Long: `GOSP is a high-performance, decentralized search protocol that provides 
-a free alternative to standard search APIs by leveraging distributed worker nodes.`,
+	Short: "GOSP (Go OpenSearchProtocol) - Distributed Search Orchestrator",
 }
 
 func Execute() {
@@ -22,5 +21,6 @@ func Execute() {
 }
 
 func init() {
-	// Global flags can be added here
+	// Ensure system directories exist
+	config.EnsureDirs()
 }
