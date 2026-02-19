@@ -32,7 +32,7 @@ func (s *GoogleScraper) ID() protocol.Engine {
 // Search performs a raw HTTP scrape of Google search results.
 func (s *GoogleScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	searchURL := fmt.Sprintf("https://www.google.com/search?q=%s&num=%d&start=%d", url.QueryEscape(query), count, offset)
-	
+
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
 		return nil, err

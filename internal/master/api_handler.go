@@ -48,9 +48,9 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 
 	showMetadata := c.Query("metadata") == "true"
 	taskID := uuid.New().String()
-	
+
 	// Engine selection
-	engineStr := c.Query("engine", "duckduckgo") 
+	engineStr := c.Query("engine", "duckduckgo")
 	engine := protocol.Engine_ENGINE_DUCKDUCKGO
 	switch engineStr {
 	case "1", "google":
@@ -62,7 +62,7 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 	case "4", "duckduckgo":
 		engine = protocol.Engine_ENGINE_DUCKDUCKGO
 	}
-	
+
 	req := &protocol.SearchRequest{
 		TaskId: taskID,
 		Query:  query,
@@ -81,7 +81,7 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 
 	if err != nil {
 		logger.Error("dispatch_failed", "error", err, "query", query)
-		
+
 		errResp := fiber.Map{"error": fmt.Sprintf("failed to fetch results: %v", err)}
 		if showMetadata {
 			errResp["osp_diagnostics"] = models.OSPDiagnostics{

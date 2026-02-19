@@ -33,7 +33,7 @@ func (s *DuckDuckGoScraper) ID() protocol.Engine {
 func (s *DuckDuckGoScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	// Using the standard DuckDuckGo HTML endpoint which is less aggressive with bot detection
 	searchURL := fmt.Sprintf("https://html.duckduckgo.com/html/?q=%s", url.QueryEscape(query))
-	
+
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
 		return nil, err

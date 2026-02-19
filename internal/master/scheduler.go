@@ -29,7 +29,7 @@ func NewRoundRobinScheduler(r *Registry) *RoundRobinScheduler {
 // NextWorker picks the next healthy worker that supports the requested engine.
 func (s *RoundRobinScheduler) NextWorker(engine protocol.Engine) (*WorkerNode, error) {
 	workers := s.registry.GetHealthyWorkers()
-	
+
 	// Filter workers by engine support
 	var eligible []*WorkerNode
 	for _, w := range workers {

@@ -54,5 +54,5 @@ var userAgents = []string{
 }
 
 func GetRandomUserAgent() string {
-	return userAgents[0] 
+	return userAgents[0]
 }

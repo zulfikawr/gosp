@@ -22,8 +22,8 @@ type Client struct {
 	supportedEngines []protocol.Engine
 	creds            credentials.TransportCredentials
 	region           string
-	
-	conn *grpc.ClientConn
+
+	conn     *grpc.ClientConn
 	scrapers map[protocol.Engine]scraper.Engine
 }
 
@@ -57,7 +57,7 @@ func (c *Client) Run(ctx context.Context) error {
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(c.creds),
 	}
-	
+
 	c.conn, err = grpc.DialContext(ctx, c.masterAddr, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to dial master: %w", err)
@@ -72,7 +72,7 @@ func (c *Client) Run(ctx context.Context) error {
 		SupportedEngines: c.supportedEngines,
 		Region:           c.region,
 	}
-	
+
 	_, err = client.Register(ctx, regReq)
 	if err != nil {
 		return fmt.Errorf("registration failed: %w", err)
@@ -106,13 +106,13 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 			case <-ticker.C:
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
-				
+
 				status := &protocol.WorkerStatus{
 					WorkerId:    c.id,
 					MemoryUsage: float32(m.Alloc) / 1024 / 1024,
 					ActiveTasks: 0,
 				}
-				
+
 				if err := stream.Send(status); err != nil {
 					errChan <- err
 					return
@@ -138,11 +138,11 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 			if task := cmd.GetTask(); task != nil {
 				start := time.Now()
 				logger.Info("received search task", "task_id", task.TaskId, "query", task.Query, "engine", task.Engine)
-				
+
 				var resp *protocol.SearchResponse
 				if s, exists := c.scrapers[task.Engine]; exists {
 					results, err := s.Search(task.Query, task.Count, task.Offset)
-					
+
 					// Enrich results with OSP metadata
 					for _, r := range results {
 						r.SourceEngine = task.Engine
@@ -153,20 +153,20 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 					if err != nil {
 						logger.Error("scrape failed", "error", err, "task_id", task.TaskId)
 						resp = &protocol.SearchResponse{
-							TaskId:        task.TaskId,
-							ErrorCode:     protocol.ErrorCode_ERROR_CODE_INTERNAL_ERROR,
-							ErrorMessage:  err.Error(),
-							WorkerId:      c.id,
-							WorkerRegion:  c.region,
+							TaskId:       task.TaskId,
+							ErrorCode:    protocol.ErrorCode_ERROR_CODE_INTERNAL_ERROR,
+							ErrorMessage: err.Error(),
+							WorkerId:     c.id,
+							WorkerRegion: c.region,
 						}
 					} else {
 						resp = &protocol.SearchResponse{
-							TaskId:           task.TaskId,
-							ErrorCode:        protocol.ErrorCode_ERROR_CODE_SUCCESS,
-							Results:          results,
-							ScrapeLatencyMs:  uint32(time.Since(start).Milliseconds()),
-							WorkerId:         c.id,
-							WorkerRegion:     c.region,
+							TaskId:          task.TaskId,
+							ErrorCode:       protocol.ErrorCode_ERROR_CODE_SUCCESS,
+							Results:         results,
+							ScrapeLatencyMs: uint32(time.Since(start).Milliseconds()),
+							WorkerId:        c.id,
+							WorkerRegion:    c.region,
 						}
 					}
 				} else {
@@ -178,7 +178,7 @@ func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService
 						WorkerRegion: c.region,
 					}
 				}
-				
+
 				status := &protocol.WorkerStatus{
 					WorkerId:      c.id,
 					CompletedTask: resp,

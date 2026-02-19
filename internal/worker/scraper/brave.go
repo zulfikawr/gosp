@@ -32,7 +32,7 @@ func (s *BraveScraper) ID() protocol.Engine {
 // Search performs a raw HTTP scrape of Brave search results.
 func (s *BraveScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	searchURL := fmt.Sprintf("https://search.brave.com/search?q=%s&offset=%d", url.QueryEscape(query), offset)
-	
+
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
 		return nil, err

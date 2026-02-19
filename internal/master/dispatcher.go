@@ -14,7 +14,7 @@ import (
 type Dispatcher struct {
 	scheduler Scheduler
 	registry  *Registry
-	
+
 	mu           sync.RWMutex
 	pendingTasks map[string]chan *protocol.SearchResponse
 }

@@ -106,13 +106,13 @@ func main() {
 		logger.Error("failed to listen gRPC", "error", err)
 		os.Exit(1)
 	}
-	
+
 	grpcServer := grpc.NewServer()
 	protocol.RegisterSearchServiceServer(grpcServer, &GRPCServer{
 		registry:   reg,
 		dispatcher: disp,
 	})
-	
+
 	go func() {
 		logger.Info("gRPC Master listening", "addr", *grpcAddr)
 		if err := grpcServer.Serve(lis); err != nil {

@@ -1,4 +1,0 @@
-{"time":"2026-02-19T12:05:30.205219Z","level":"INFO","msg":"starting OSP worker node","worker_id":"worker-local-01","master":"localhost:19004"}
-{"time":"2026-02-19T12:05:30.208557641Z","level":"INFO","msg":"worker registered successfully","worker_id":"worker-local-01","region":"US-Cloud"}
-{"time":"2026-02-19T12:05:46.206521729Z","level":"INFO","msg":"received search task","task_id":"7cd87e19-c400-4a75-883a-ddfd9642b8c3","query":"golang","engine":4}
-{"time":"2026-02-19T12:05:47.389243716Z","level":"DEBUG","msg":"duckduckgo scrape complete","count":5,"query":"golang"}

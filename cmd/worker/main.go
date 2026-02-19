@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	masterAddr   = flag.String("master", "localhost:50051", "OSP Master gRPC address")
-	workerID     = flag.String("id", "", "Unique worker ID (optional, will generate if empty)")
-	useInsecure  = flag.Bool("insecure", true, "Use insecure gRPC connection (disable for production mTLS)")
+	masterAddr  = flag.String("master", "localhost:50051", "OSP Master gRPC address")
+	workerID    = flag.String("id", "", "Unique worker ID (optional, will generate if empty)")
+	useInsecure = flag.Bool("insecure", true, "Use insecure gRPC connection (disable for production mTLS)")
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	client := worker.NewClient(id, "v0.1.0", *masterAddr, engines, creds)
-	
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

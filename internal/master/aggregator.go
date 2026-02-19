@@ -59,7 +59,7 @@ func normalizeURL(u string) string {
 	u = strings.TrimSpace(u)
 	u = strings.ToLower(u)
 	u = strings.TrimSuffix(u, "/")
-	
+
 	// Remove common tracking parameters (utm_*, etc.)
 	if idx := strings.Index(u, "?"); idx != -1 {
 		params := strings.Split(u[idx+1:], "&")
@@ -75,6 +75,6 @@ func normalizeURL(u string) string {
 			u = u[:idx]
 		}
 	}
-	
+
 	return u
 }

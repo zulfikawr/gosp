@@ -2,13 +2,13 @@ package models
 
 // SearchResponse matches the Brave Search API result schema.
 type SearchResponse struct {
-	Type  string         `json:"type"`
-	Query QueryMetadata  `json:"query"`
-	Web   WebResults     `json:"web"`
-	News  *NewsResults   `json:"news,omitempty"`
-	Video *VideoResults  `json:"videos,omitempty"`
-	Image *ImageResults  `json:"images,omitempty"`
-	Meta  ResponseMeta   `json:"meta"`
+	Type  string        `json:"type"`
+	Query QueryMetadata `json:"query"`
+	Web   WebResults    `json:"web"`
+	News  *NewsResults  `json:"news,omitempty"`
+	Video *VideoResults `json:"videos,omitempty"`
+	Image *ImageResults `json:"images,omitempty"`
+	Meta  ResponseMeta  `json:"meta"`
 
 	// OSP Extended Metadata (Opt-in via ?metadata=true)
 	Performance *OSPPerformance `json:"osp_performance,omitempty"`
@@ -23,18 +23,18 @@ type QueryMetadata struct {
 }
 
 type WebResults struct {
-	Type    string       `json:"type"`
-	Results []WebResult  `json:"results"`
+	Type    string      `json:"type"`
+	Results []WebResult `json:"results"`
 }
 
 type WebResult struct {
-	Title       string        `json:"title"`
-	URL         string        `json:"url"`
-	Description string        `json:"description"`
-	Age         string        `json:"age,omitempty"`
-	Language    string        `json:"language,omitempty"`
-	Thumbnail   *Thumbnail    `json:"thumbnail,omitempty"`
-	Profile     *ProfileMeta  `json:"profile,omitempty"`
+	Title       string       `json:"title"`
+	URL         string       `json:"url"`
+	Description string       `json:"description"`
+	Age         string       `json:"age,omitempty"`
+	Language    string       `json:"language,omitempty"`
+	Thumbnail   *Thumbnail   `json:"thumbnail,omitempty"`
+	Profile     *ProfileMeta `json:"profile,omitempty"`
 
 	// OSP Specific Result Signals
 	Signals *OSPSignals `json:"osp_signals,omitempty"`

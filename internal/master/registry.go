@@ -20,7 +20,7 @@ type WorkerNode struct {
 	ActiveTasks      uint32
 	RemoteAddr       string
 	Region           string
-	
+
 	// CommandChan is used by the Dispatcher to send tasks to this specific worker.
 	CommandChan chan *protocol.MasterCommand
 }
@@ -29,7 +29,7 @@ type WorkerNode struct {
 type Registry struct {
 	mu      sync.RWMutex
 	workers map[string]*WorkerNode
-	
+
 	pruneTimeout time.Duration
 }
 

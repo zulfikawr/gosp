@@ -1,5 +1,0 @@
-{"time":"2026-02-19T12:05:30.206100953Z","level":"INFO","msg":"gRPC Master listening","addr":":19004"}
-{"time":"2026-02-19T12:05:30.206747028Z","level":"INFO","msg":"HTTP Master API listening","addr":":19000"}
-{"time":"2026-02-19T12:05:30.208240478Z","level":"INFO","msg":"new worker registered","worker_id":"worker-local-01","addr":"127.0.0.1:38622","engines":[1,3,2,4]}
-{"time":"2026-02-19T12:05:30.20893855Z","level":"INFO","msg":"worker connected via gRPC stream","worker_id":"worker-local-01"}
-{"time":"2026-02-19T12:05:46.205403715Z","level":"DEBUG","msg":"task dispatched to worker","task_id":"7cd87e19-c400-4a75-883a-ddfd9642b8c3","worker_id":"worker-local-01"}
