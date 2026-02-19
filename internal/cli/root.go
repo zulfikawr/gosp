@@ -23,4 +23,7 @@ func Execute() {
 func init() {
 	// Ensure system directories exist
 	config.EnsureDirs()
+
+	// Disable the default completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
