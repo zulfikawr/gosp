@@ -50,6 +50,7 @@ This document provides a granular, step-by-step task list for the implementation
 ### 4.4 HTTP API Layer
 - [x] **Brave API Parity:** `/web/search` endpoint with 1:1 schema compatibility.
 - [x] **Opt-in Verbosity:** `?metadata=true` toggle for OSP extended metrics.
+- [x] **Daemon Management:** Added `--daemon` mode and `gosp stop` command.
 
 ---
 

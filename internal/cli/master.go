@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/internal/master"
+	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/protocol"
 	"google.golang.org/grpc"
@@ -102,6 +103,17 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 }
 
 func runMaster() {
+	// Try to load config if it exists
+	cfg, err := config.Load()
+	if err == nil {
+		if masterHttpAddr == ":19000" && cfg.HTTPPort != "" {
+			masterHttpAddr = ":" + cfg.HTTPPort
+		}
+		if masterGrpcAddr == ":19004" && cfg.GRPCPort != "" {
+			masterGrpcAddr = ":" + cfg.GRPCPort
+		}
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	runMasterInternal(ctx)

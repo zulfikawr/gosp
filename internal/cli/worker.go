@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/internal/worker"
+	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/protocol"
 	"google.golang.org/grpc/credentials"
@@ -46,6 +47,20 @@ func runWorker() {
 }
 
 func runWorkerInternal(ctx context.Context) {
+	// Try to load config
+	cfg, err := config.Load()
+	if err == nil {
+		if workerID == "" {
+			workerID = cfg.NodeID
+		}
+		if workerMasterAddr == "localhost:19004" && cfg.MasterURL != "" {
+			workerMasterAddr = cfg.MasterURL
+		}
+		if workerRegion == "US-Cloud" && cfg.Region != "" {
+			workerRegion = cfg.Region
+		}
+	}
+
 	id := workerID
 	if id == "" {
 		id = "worker-" + uuid.New().String()[:8]
