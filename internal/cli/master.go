@@ -17,8 +17,12 @@ import (
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/pid"
 	"github.com/zulfikawr/gosp/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/tokens"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -52,8 +56,15 @@ func init() {
 			survey.AskOne(&survey.Input{Message: "Master Name:", Default: "main"}, &cfg.Name)
 			survey.AskOne(&survey.Input{Message: "HTTP Port:", Default: "19000"}, &cfg.HTTPPort)
 			survey.AskOne(&survey.Input{Message: "gRPC Port:", Default: "19004"}, &cfg.GRPCPort)
+			
+			// Generate persistent join token
+			token, _ := tokens.Generate()
+			cfg.JoinToken = token
+			
 			config.SaveMaster(cfg)
 			fmt.Println("✅ Master profile created.")
+			fmt.Printf("🔑 Join Token: %s\n", cfg.JoinToken)
+			fmt.Println("   (Workers will need this token to join the cluster)")
 		},
 	})
 
@@ -102,9 +113,31 @@ type GRPCServer struct {
 	protocol.UnimplementedSearchServiceServer
 	registry   *master.Registry
 	dispatcher *master.Dispatcher
+	token      string
+}
+
+func (s *GRPCServer) validateToken(ctx context.Context) error {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	values := md["authorization"]
+	if len(values) == 0 {
+		return status.Errorf(codes.Unauthenticated, "authorization token is not provided")
+	}
+
+	if values[0] != s.token {
+		return status.Errorf(codes.Unauthenticated, "invalid authorization token")
+	}
+
+	return nil
 }
 
 func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest) (*protocol.RegisterResponse, error) {
+	if err := s.validateToken(ctx); err != nil {
+		return nil, err
+	}
 	p, ok := peer.FromContext(ctx)
 	remoteAddr := "unknown"
 	if ok { remoteAddr = p.Addr.String() }
@@ -113,6 +146,9 @@ func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest
 }
 
 func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error {
+	if err := s.validateToken(stream.Context()); err != nil {
+		return err
+	}
 	status, err := stream.Recv()
 	if err != nil { return err }
 	workerID := status.WorkerId
@@ -154,8 +190,20 @@ func startMasterDaemon(name string) {
 func runMasterService(name string) {
 	cfg, err := config.LoadMaster(name)
 	if err != nil {
-		fmt.Printf("Error: Profile '%s' not found.\n", name)
-		os.Exit(1)
+		fmt.Printf("❌ Error: Master profile '%s' not found.\n", name)
+		createNow := false
+		survey.AskOne(&survey.Confirm{Message: fmt.Sprintf("Would you like to create profile '%s' now?", name), Default: true}, &createNow)
+		if createNow {
+			cfg = &config.MasterConfig{Name: name}
+			survey.AskOne(&survey.Input{Message: "HTTP Port:", Default: "19000"}, &cfg.HTTPPort)
+			survey.AskOne(&survey.Input{Message: "gRPC Port:", Default: "19004"}, &cfg.GRPCPort)
+			token, _ := tokens.Generate()
+			cfg.JoinToken = token
+			config.SaveMaster(cfg)
+			fmt.Println("✅ Profile created. Starting...")
+		} else {
+			os.Exit(1)
+		}
 	}
 
 	pidPath := config.GetPIDPath("master", name)
@@ -172,7 +220,11 @@ func runMasterService(name string) {
 
 	lis, _ := net.Listen("tcp", ":"+cfg.GRPCPort)
 	grpcServer := grpc.NewServer()
-	protocol.RegisterSearchServiceServer(grpcServer, &GRPCServer{registry: reg, dispatcher: disp})
+	protocol.RegisterSearchServiceServer(grpcServer, &GRPCServer{
+		registry:   reg,
+		dispatcher: disp,
+		token:      cfg.JoinToken,
+	})
 	
 	go func() {
 		logger.Info("gRPC Master listening", "port", cfg.GRPCPort, "profile", name)

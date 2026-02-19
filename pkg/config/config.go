@@ -8,9 +8,10 @@ import (
 )
 
 type MasterConfig struct {
-	Name     string `json:"name"`
-	HTTPPort string `json:"http_port"`
-	GRPCPort string `json:"grpc_port"`
+	Name      string `json:"name"`
+	HTTPPort  string `json:"http_port"`
+	GRPCPort  string `json:"grpc_port"`
+	JoinToken string `json:"join_token"`
 }
 
 type WorkerConfig struct {

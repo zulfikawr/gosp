@@ -62,14 +62,21 @@ func runSearch() {
 
 	resp, err := http.Get(fullURL)
 	if err != nil {
-		fmt.Printf("Error: Failed to connect to Master on port %s. Is it running?\n", cfg.HTTPPort)
+		fmt.Printf("❌ Error: Could not reach the GOSP Master on port %s.\n", cfg.HTTPPort)
+		fmt.Println("👉 Solution: Is the brain running? Try starting it with: 'gosp master run'")
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Error: Master returned status %d\nBody: %s\n", resp.StatusCode, string(body))
+		var errData map[string]string
+		json.Unmarshal(body, &errData)
+		
+		fmt.Printf("❌ Error: The Master is online, but the search failed: %s\n", errData["error"])
+		if resp.StatusCode == 503 {
+			fmt.Println("👉 Solution: A brain needs hands! Ensure a worker is connected with: 'gosp worker run'")
+		}
 		os.Exit(1)
 	}
 

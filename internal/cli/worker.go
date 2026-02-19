@@ -29,6 +29,7 @@ var workerCmd = &cobra.Command{
 }
 
 func init() {
+	// Worker List
 	workerCmd.AddCommand(&cobra.Command{
 		Use:   "list",
 		Short: "List all Worker profiles",
@@ -42,6 +43,7 @@ func init() {
 		},
 	})
 
+	// Worker Create
 	workerCmd.AddCommand(&cobra.Command{
 		Use:   "create",
 		Short: "Create a new Worker profile",
@@ -50,12 +52,19 @@ func init() {
 			survey.AskOne(&survey.Input{Message: "Worker ID:", Default: "local-01"}, &cfg.ID)
 			survey.AskOne(&survey.Input{Message: "Master gRPC URL:", Default: "localhost:19004"}, &cfg.MasterURL)
 			survey.AskOne(&survey.Input{Message: "Region:", Default: "US-Cloud"}, &cfg.Region)
-			survey.AskOne(&survey.Input{Message: "Join Token (optional):"}, &cfg.JoinToken)
+			survey.AskOne(&survey.Input{Message: "Join Token (Required):"}, &cfg.JoinToken)
+			
+			if cfg.JoinToken == "" {
+				fmt.Println("❌ Error: A Join Token is required to connect to a Master.")
+				os.Exit(1)
+			}
+			
 			config.SaveWorker(cfg)
 			fmt.Println("✅ Worker profile created.")
 		},
 	})
 
+	// Worker Run
 	runCmd := &cobra.Command{
 		Use:   "run [profile]",
 		Short: "Start a Worker node",
@@ -73,6 +82,7 @@ func init() {
 	runCmd.Flags().BoolVar(&workerNoDaemon, "no-daemon", false, "Run in foreground")
 	workerCmd.AddCommand(runCmd)
 
+	// Worker Stop
 	workerCmd.AddCommand(&cobra.Command{
 		Use:   "stop [profile]",
 		Short: "Stop a running Worker node",
@@ -84,6 +94,7 @@ func init() {
 		},
 	})
 
+	// Worker Delete
 	workerCmd.AddCommand(&cobra.Command{
 		Use:   "delete [profile]",
 		Short: "Delete a Worker profile",
@@ -107,8 +118,20 @@ func startWorkerDaemon(id string) {
 func runWorkerService(id string) {
 	cfg, err := config.LoadWorker(id)
 	if err != nil {
-		fmt.Printf("Error: Profile '%s' not found.\n", id)
-		os.Exit(1)
+		fmt.Printf("❌ Error: Worker profile '%s' not found.\n", id)
+		
+		createNow := false
+		survey.AskOne(&survey.Confirm{Message: fmt.Sprintf("Would you like to create profile '%s' now?", id), Default: true}, &createNow)
+		if createNow {
+			cfg = &config.WorkerConfig{ID: id}
+			survey.AskOne(&survey.Input{Message: "Master gRPC URL:", Default: "localhost:19004"}, &cfg.MasterURL)
+			survey.AskOne(&survey.Input{Message: "Region:", Default: "US-Cloud"}, &cfg.Region)
+			survey.AskOne(&survey.Input{Message: "Join Token (Required):"}, &cfg.JoinToken)
+			config.SaveWorker(cfg)
+			fmt.Println("✅ Profile created. Connecting...")
+		} else {
+			os.Exit(1)
+		}
 	}
 
 	pidPath := config.GetPIDPath("worker", id)
@@ -125,7 +148,8 @@ func runWorkerService(id string) {
 		protocol.Engine_ENGINE_DUCKDUCKGO,
 	}
 
-	client := worker.NewClient(cfg.ID, "v0.1.0", cfg.MasterURL, engines, insecure.NewCredentials())
+	// NEW: Worker now uses the token from config
+	client := worker.NewClient(cfg.ID, "v0.1.0", cfg.MasterURL, engines, insecure.NewCredentials(), cfg.JoinToken)
 	
 	go func() {
 		for {

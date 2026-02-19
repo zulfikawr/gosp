@@ -12,6 +12,7 @@ import (
 	"github.com/zulfikawr/gosp/pkg/protocol"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
 // Client handles the worker's connection and communication with the OSP Master.
@@ -22,12 +23,13 @@ type Client struct {
 	supportedEngines []protocol.Engine
 	creds            credentials.TransportCredentials
 	region           string
+	token            string // NEW
 
 	conn     *grpc.ClientConn
 	scrapers map[protocol.Engine]scraper.Engine
 }
 
-func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds credentials.TransportCredentials) *Client {
+func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds credentials.TransportCredentials, token string) *Client {
 	c := &Client{
 		id:               id,
 		version:          version,
@@ -35,6 +37,7 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 		supportedEngines: engines,
 		creds:            creds,
 		region:           "US-Cloud", // Default region
+		token:            token,      // NEW
 		scrapers:         make(map[protocol.Engine]scraper.Engine),
 	}
 
@@ -54,6 +57,10 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 
 func (c *Client) Run(ctx context.Context) error {
 	var err error
+	
+	// Inject token into outgoing gRPC context
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", c.token)
+
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(c.creds),
 	}

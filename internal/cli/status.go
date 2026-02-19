@@ -63,7 +63,7 @@ func showMasterStatus(name string) {
 func fetchClusterStatus(port string) {
 	resp, err := http.Get("http://localhost:" + port + "/cluster/status")
 	if err != nil {
-		fmt.Println("Error: Failed to fetch cluster metrics from API.")
+		fmt.Println("❌ Error: Failed to fetch cluster metrics. Is the Master fully initialized?")
 		return
 	}
 	defer resp.Body.Close()
@@ -82,6 +82,9 @@ func fetchClusterStatus(port string) {
 			node := w.(map[string]interface{})
 			fmt.Printf("%-20v | %-15v | %-10s\n", node["ID"], node["Region"], "ACTIVE")
 		}
+	} else {
+		fmt.Println("⚠️  Status: Master is online, but no workers are connected.")
+		fmt.Println("👉 Start a worker with: 'gosp worker run'")
 	}
 }
 
