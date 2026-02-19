@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -109,9 +110,17 @@ func init() {
 }
 
 func startWorkerDaemon(id string) {
+	logDir := filepath.Join(config.GetBaseDir(), "logs")
+	os.MkdirAll(logDir, 0755)
+	logFile := filepath.Join(logDir, "worker_"+id+".log")
+	f, _ := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+
 	cmd := exec.Command(os.Args[0], "worker", "run", id, "--no-daemon")
+	cmd.Stdout = f
+	cmd.Stderr = f
 	cmd.Start()
 	fmt.Printf("🚀 Worker '%s' connected in background (PID: %d)\n", id, cmd.Process.Pid)
+	fmt.Printf("📝 Logs: %s\n", logFile)
 	os.Exit(0)
 }
 

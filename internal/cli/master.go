@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -181,9 +182,17 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 }
 
 func startMasterDaemon(name string) {
+	logDir := filepath.Join(config.GetBaseDir(), "logs")
+	os.MkdirAll(logDir, 0755)
+	logFile := filepath.Join(logDir, "master_"+name+".log")
+	f, _ := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+
 	cmd := exec.Command(os.Args[0], "master", "run", name, "--no-daemon")
+	cmd.Stdout = f
+	cmd.Stderr = f
 	cmd.Start()
 	fmt.Printf("🚀 Master '%s' started in background (PID: %d)\n", name, cmd.Process.Pid)
+	fmt.Printf("📝 Logs: %s\n", logFile)
 	os.Exit(0)
 }
 
@@ -218,7 +227,12 @@ func runMasterService(name string) {
 	disp := master.NewDispatcher(sched, reg)
 	aggr := master.NewResultAggregator()
 
-	lis, _ := net.Listen("tcp", ":"+cfg.GRPCPort)
+	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+	if err != nil {
+		fmt.Printf("❌ Error: Failed to listen on gRPC port %s: %v\n", cfg.GRPCPort, err)
+		os.Exit(1)
+	}
+
 	grpcServer := grpc.NewServer()
 	protocol.RegisterSearchServiceServer(grpcServer, &GRPCServer{
 		registry:   reg,
@@ -228,7 +242,9 @@ func runMasterService(name string) {
 	
 	go func() {
 		logger.Info("gRPC Master listening", "port", cfg.GRPCPort, "profile", name)
-		grpcServer.Serve(lis)
+		if err := grpcServer.Serve(lis); err != nil {
+			logger.Error("gRPC server failed", "error", err)
+		}
 	}()
 
 	httpServer := master.NewHTTPServer(disp, aggr)

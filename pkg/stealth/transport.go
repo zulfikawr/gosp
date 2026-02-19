@@ -2,7 +2,6 @@ package stealth
 
 import (
 	"context"
-	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -11,6 +10,7 @@ import (
 )
 
 // NewStealthClient returns an http.Client that spoofs its TLS fingerprint (JA3).
+// It defaults to HTTP/1.1 to maximize stability against strict H2 server checks.
 func NewStealthClient(timeout time.Duration) *http.Client {
 	dialer := &net.Dialer{
 		Timeout:   timeout,
@@ -26,20 +26,25 @@ func NewStealthClient(timeout time.Duration) *http.Client {
 			}
 			host, _, _ := net.SplitHostPort(addr)
 
-			uConn := utls.UClient(conn, &utls.Config{ServerName: host}, utls.HelloChrome_120)
+			// Use uTLS to spoof the HelloChrome fingerprint.
+			// We force NextProtos to only include http/1.1 to avoid H2 handshake failures
+			// which are common when scraping from datacenter IPs.
+			uConn := utls.UClient(conn, &utls.Config{
+				ServerName: host,
+				NextProtos: []string{"http/1.1"}, 
+			}, utls.HelloChrome_120)
+			
 			if err := uConn.Handshake(); err != nil {
 				conn.Close()
 				return nil, err
 			}
 			return uConn, nil
 		},
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
-		},
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		// Explicitly disable H2 to prevent transport mismatches
 		ForceAttemptHTTP2:     false,
 	}
 
@@ -54,5 +59,5 @@ var userAgents = []string{
 }
 
 func GetRandomUserAgent() string {
-	return userAgents[0]
+	return userAgents[0] 
 }
