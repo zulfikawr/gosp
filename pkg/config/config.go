@@ -25,8 +25,18 @@ type WorkerConfig struct {
 	JoinToken string `json:"join_token,omitempty"`
 }
 
+var baseDirOverride string
+
+// SetBaseDir sets an override for the configuration directory (primarily for testing).
+func SetBaseDir(dir string) {
+	baseDirOverride = dir
+}
+
 // GetBaseDir returns the base directory for GOSP configuration files.
 func GetBaseDir() string {
+	if baseDirOverride != "" {
+		return baseDirOverride
+	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".gosp")
 }

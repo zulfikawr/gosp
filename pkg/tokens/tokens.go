@@ -13,6 +13,14 @@ var words = []string{
 	"island", "joker", "knight", "lemon", "mountain", "nebula", "ocean", "planet",
 	"quartz", "river", "silver", "tiger", "ultra", "vortex", "winter", "xray",
 	"yellow", "zebra", "alpha", "bravo", "delta", "echo", "foxtrot", "golf",
+	"hotel", "india", "juliett", "kilo", "lima", "mike", "november", "oscar",
+	"papa", "quebec", "romeo", "sierra", "tango", "uniform", "victor", "whiskey",
+	"xray", "yankee", "zulu", "amber", "bronze", "copper", "diamond", "emerald",
+	"flame", "glimmer", "heaven", "indigo", "jade", "karate", "lunar", "magic",
+	"night", "opal", "pearl", "ruby", "storm", "titan", "unity", "valley",
+	"whale", "zenith", "arc", "bolt", "crane", "drift", "edge", "flux", "glow",
+	"haze", "ion", "jolt", "kite", "lynx", "moth", "nova", "orb", "pulse",
+	"quark", "rift", "snag", "tide", "urge", "vibe", "warp", "zone",
 }
 
 // Generate creates a human-readable join token consisting of three random words.
