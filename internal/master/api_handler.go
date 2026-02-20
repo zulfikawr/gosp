@@ -27,6 +27,10 @@ func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		ReadTimeout:           10 * time.Second,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			logger.Error("fiber error", "error", err)
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		},
 	})
 
 	s := &HTTPServer{
@@ -49,10 +53,36 @@ func (s *HTTPServer) setupRoutes() {
 
 // handleClusterStatus returns the current cluster status including connected workers.
 func (s *HTTPServer) handleClusterStatus(c *fiber.Ctx) error {
+	logger.Debug("handling cluster status request")
 	workers := s.dispatcher.registry.GetHealthyWorkers()
+
+	// Create a safe view of workers for JSON serialization (avoiding CommandChan)
+	type WorkerView struct {
+		ID               string            `json:"id"`
+		Version          string            `json:"version"`
+		SupportedEngines []protocol.Engine `json:"supported_engines"`
+		Region           string            `json:"region"`
+		RemoteAddr       string            `json:"remote_addr"`
+		CPUUsage         float32           `json:"cpu_usage"`
+		MemoryUsage      float32           `json:"memory_usage"`
+	}
+
+	workerViews := make([]WorkerView, len(workers))
+	for i, w := range workers {
+		workerViews[i] = WorkerView{
+			ID:               w.ID,
+			Version:          w.Version,
+			SupportedEngines: w.SupportedEngines,
+			Region:           w.Region,
+			RemoteAddr:       w.RemoteAddr,
+			CPUUsage:         w.CPUUsage,
+			MemoryUsage:      w.MemoryUsage,
+		}
+	}
+
 	return c.JSON(fiber.Map{
 		"active_workers": len(workers),
-		"workers":        workers,
+		"workers":        workerViews,
 		"version":        version.AppVersion,
 	})
 }

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-02-21
+
+### Fixed
+- **API Stability:** Fixed a crash in `/cluster/status` caused by JSON serialization of Go channels in the Worker struct.
+- **Token Security:** Expanded the `pkg/tokens` wordlist from 32 to 96 words to significantly reduce the probability of Join Token collisions.
+
+### Added
+- **Test Suite:** Implemented a comprehensive test suite for all critical packages:
+    - **E2E API Tests:** Verified Brave-compatible search flow and cluster status.
+    - **Stealth Transport:** Unit tests for anti-detection HTTP client.
+    - **Core Packages:** Achieved >80% coverage for `config`, `logger`, `tokens`, and `pid`.
+
 ## [0.2.0] - 2026-02-21
 
 ### Added
