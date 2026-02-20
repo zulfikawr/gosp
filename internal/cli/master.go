@@ -222,7 +222,14 @@ func startMasterDaemon(name string) {
 	}
 	defer f.Close()
 
-	cmd := exec.Command(os.Args[0], "master", "run", name, "--no-daemon")
+	// Get the absolute path to the current executable
+	execPath, err := os.Executable()
+	if err != nil {
+		fmt.Printf("❌ Error: Failed to get executable path: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmd := exec.Command(execPath, "master", "run", name, "--no-daemon")
 	cmd.Stdout = f
 	cmd.Stderr = f
 	if err := cmd.Start(); err != nil {
