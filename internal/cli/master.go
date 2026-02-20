@@ -210,14 +210,25 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 // startMasterDaemon launches the master as a background process with output redirected to a log file.
 func startMasterDaemon(name string) {
 	logDir := filepath.Join(config.GetBaseDir(), "logs")
-	os.MkdirAll(logDir, 0755)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		fmt.Printf("❌ Error: Failed to create log directory: %v\n", err)
+		os.Exit(1)
+	}
 	logFile := filepath.Join(logDir, "master_"+name+".log")
-	f, _ := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Printf("❌ Error: Failed to open log file: %v\n", err)
+		os.Exit(1)
+	}
+	defer f.Close()
 
 	cmd := exec.Command(os.Args[0], "master", "run", name, "--no-daemon")
 	cmd.Stdout = f
 	cmd.Stderr = f
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("❌ Error: Failed to start master: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Printf("🚀 Master '%s' started in background (PID: %d)\n", name, cmd.Process.Pid)
 	fmt.Printf("📝 Logs: %s\n", logFile)
 	os.Exit(0)

@@ -120,14 +120,25 @@ func init() {
 // startWorkerDaemon launches the worker as a background process with output redirected to a log file.
 func startWorkerDaemon(id string) {
 	logDir := filepath.Join(config.GetBaseDir(), "logs")
-	os.MkdirAll(logDir, 0755)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		fmt.Printf("❌ Error: Failed to create log directory: %v\n", err)
+		os.Exit(1)
+	}
 	logFile := filepath.Join(logDir, "worker_"+id+".log")
-	f, _ := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Printf("❌ Error: Failed to open log file: %v\n", err)
+		os.Exit(1)
+	}
+	defer f.Close()
 
 	cmd := exec.Command(os.Args[0], "worker", "run", id, "--no-daemon")
 	cmd.Stdout = f
 	cmd.Stderr = f
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("❌ Error: Failed to start worker: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Printf("🚀 Worker '%s' connected in background (PID: %d)\n", id, cmd.Process.Pid)
 	fmt.Printf("📝 Logs: %s\n", logFile)
 	os.Exit(0)
