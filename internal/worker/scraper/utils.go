@@ -1,3 +1,5 @@
+// Package scraper provides implementations for various search engine scrapers.
+// Each scraper implements the Engine interface for consistent search result retrieval.
 package scraper
 
 import (

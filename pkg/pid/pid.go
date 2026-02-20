@@ -1,3 +1,5 @@
+// Package pid provides process ID file management for GOSP services.
+// It handles writing, reading, and validating PID files for daemon processes.
 package pid
 
 import (

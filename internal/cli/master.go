@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface for GOSP (Go OpenSearchProtocol).
+// It defines all available commands including master, worker, search, and status operations.
 package cli
 
 import (
@@ -30,6 +32,7 @@ var (
 	masterNoDaemon bool
 )
 
+// masterCmd is the base command for all master-related operations.
 var masterCmd = &cobra.Command{
 	Use:   "master",
 	Short: "Manage Master nodes (The Brain)",
@@ -114,6 +117,7 @@ func init() {
 	rootCmd.AddCommand(masterCmd)
 }
 
+// GRPCServer implements the gRPC SearchService for master-worker communication.
 type GRPCServer struct {
 	protocol.UnimplementedSearchServiceServer
 	registry   *master.Registry
@@ -121,6 +125,7 @@ type GRPCServer struct {
 	token      string
 }
 
+// validateToken verifies the authorization token from incoming gRPC requests.
 func (s *GRPCServer) validateToken(ctx context.Context) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -139,6 +144,7 @@ func (s *GRPCServer) validateToken(ctx context.Context) error {
 	return nil
 }
 
+// Register handles worker registration requests via gRPC.
 func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest) (*protocol.RegisterResponse, error) {
 	if err := s.validateToken(ctx); err != nil {
 		return nil, err
@@ -152,6 +158,7 @@ func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest
 	return &protocol.RegisterResponse{Success: true, Message: "Registered"}, nil
 }
 
+// Connect establishes a bidirectional gRPC stream for worker communication.
 func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error {
 	if err := s.validateToken(stream.Context()); err != nil {
 		return err
@@ -200,6 +207,7 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 	return <-errChan
 }
 
+// startMasterDaemon launches the master as a background process with output redirected to a log file.
 func startMasterDaemon(name string) {
 	logDir := filepath.Join(config.GetBaseDir(), "logs")
 	os.MkdirAll(logDir, 0755)
@@ -215,6 +223,7 @@ func startMasterDaemon(name string) {
 	os.Exit(0)
 }
 
+// runMasterService runs the master node in the foreground, initializing gRPC and HTTP servers.
 func runMasterService(name string) {
 	cfg, err := config.LoadMaster(name)
 	if err != nil {
@@ -274,6 +283,7 @@ func runMasterService(name string) {
 	grpcServer.GracefulStop()
 }
 
+// stopService sends a SIGTERM signal to stop a running service by its PID file.
 func stopService(role, name string) {
 	pidPath := config.GetPIDPath(role, name)
 	p, err := pid.ReadPID(pidPath)

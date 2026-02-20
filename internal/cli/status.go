@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface for GOSP (Go OpenSearchProtocol).
+// It defines all available commands including master, worker, search, and status operations.
 package cli
 
 import (
@@ -38,6 +40,7 @@ func init() {
 	})
 }
 
+// showMasterStatus displays the status of a master node and its connected cluster.
 func showMasterStatus(name string) {
 	cfg, err := config.LoadMaster(name)
 	if err != nil {
@@ -66,6 +69,7 @@ func showMasterStatus(name string) {
 	}
 }
 
+// fetchClusterStatus retrieves and displays the cluster status from the master's HTTP API.
 func fetchClusterStatus(port string) {
 	resp, err := http.Get("http://localhost:" + port + "/cluster/status")
 	if err != nil {
@@ -94,6 +98,7 @@ func fetchClusterStatus(port string) {
 	}
 }
 
+// showWorkerStatus displays the status of a worker node.
 func showWorkerStatus(id string) {
 	cfg, err := config.LoadWorker(id)
 	if err != nil {

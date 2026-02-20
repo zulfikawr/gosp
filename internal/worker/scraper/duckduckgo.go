@@ -1,3 +1,5 @@
+// Package scraper provides implementations for various search engine scrapers.
+// Each scraper implements the Engine interface for consistent search result retrieval.
 package scraper
 
 import (
@@ -26,10 +28,12 @@ func NewDuckDuckGoScraper() *DuckDuckGoScraper {
 	}
 }
 
+// ID returns the protocol engine identifier for DuckDuckGo.
 func (s *DuckDuckGoScraper) ID() protocol.Engine {
 	return protocol.Engine_ENGINE_DUCKDUCKGO
 }
 
+// Search performs a scrape of DuckDuckGo HTML results.
 func (s *DuckDuckGoScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	// Using the standard DuckDuckGo HTML endpoint which is less aggressive with bot detection
 	searchURL := fmt.Sprintf("https://html.duckduckgo.com/html/?q=%s", url.QueryEscape(query))

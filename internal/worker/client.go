@@ -1,3 +1,5 @@
+// Package worker provides the worker node functionality for GOSP.
+// Workers connect to master nodes and perform search scraping tasks.
 package worker
 
 import (
@@ -29,6 +31,7 @@ type Client struct {
 	scrapers map[protocol.Engine]scraper.Engine
 }
 
+// NewClient creates a new worker client with the specified configuration.
 func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds credentials.TransportCredentials, token string) *Client {
 	c := &Client{
 		id:               id,
@@ -55,6 +58,7 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 	return c
 }
 
+// Run establishes the connection to the master and starts processing tasks.
 func (c *Client) Run(ctx context.Context) error {
 	var err error
 
@@ -101,6 +105,7 @@ func (c *Client) Run(ctx context.Context) error {
 	return c.handleStream(ctx, stream)
 }
 
+// handleStream manages the bidirectional gRPC stream for receiving tasks and sending status updates.
 func (c *Client) handleStream(ctx context.Context, stream protocol.SearchService_ConnectClient) error {
 	errChan := make(chan error, 2)
 

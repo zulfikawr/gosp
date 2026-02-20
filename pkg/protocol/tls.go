@@ -1,3 +1,5 @@
+// Package protocol provides gRPC protocol definitions and TLS utilities for GOSP.
+// It includes mTLS configuration for secure master-worker communication.
 package protocol
 
 import (

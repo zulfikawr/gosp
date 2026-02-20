@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface for GOSP (Go OpenSearchProtocol).
+// It defines all available commands including master, worker, search, and status operations.
 package cli
 
 import (
@@ -24,6 +26,7 @@ var (
 	searchProfile  string
 )
 
+// searchCmd performs a search query against the GOSP master node.
 var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Perform a search query",
@@ -44,6 +47,7 @@ func init() {
 	rootCmd.AddCommand(searchCmd)
 }
 
+// runSearch executes a search query against the configured master node.
 func runSearch() {
 	cfg, err := config.LoadMaster(searchProfile)
 	if err != nil {
@@ -106,6 +110,7 @@ func runSearch() {
 	fmt.Println(separator)
 }
 
+// truncate shortens a string to n characters, adding ellipsis if truncated.
 func truncate(s string, n int) string {
 	runes := []rune(s)
 	if len(runes) <= n {

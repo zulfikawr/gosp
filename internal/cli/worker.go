@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface for GOSP (Go OpenSearchProtocol).
+// It defines all available commands including master, worker, search, and status operations.
 package cli
 
 import (
@@ -25,6 +27,7 @@ var (
 	workerNoDaemon bool
 )
 
+// workerCmd is the base command for all worker-related operations.
 var workerCmd = &cobra.Command{
 	Use:   "worker",
 	Short: "Manage Worker nodes (The Scrapers)",
@@ -114,6 +117,7 @@ func init() {
 	rootCmd.AddCommand(workerCmd)
 }
 
+// startWorkerDaemon launches the worker as a background process with output redirected to a log file.
 func startWorkerDaemon(id string) {
 	logDir := filepath.Join(config.GetBaseDir(), "logs")
 	os.MkdirAll(logDir, 0755)
@@ -129,6 +133,7 @@ func startWorkerDaemon(id string) {
 	os.Exit(0)
 }
 
+// runWorkerService runs the worker node in the foreground, handling lifecycle and reconnection logic.
 func runWorkerService(id string) {
 	cfg, err := config.LoadWorker(id)
 	if err != nil {

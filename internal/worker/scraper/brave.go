@@ -1,3 +1,5 @@
+// Package scraper provides implementations for various search engine scrapers.
+// Each scraper implements the Engine interface for consistent search result retrieval.
 package scraper
 
 import (
@@ -12,20 +14,24 @@ import (
 	"github.com/zulfikawr/gosp/pkg/stealth"
 )
 
+// BraveScraper implements the Engine interface for Brave Search.
 type BraveScraper struct {
 	client *http.Client
 }
 
+// NewBraveScraper initializes a new Brave scraper with stealth transport.
 func NewBraveScraper() *BraveScraper {
 	return &BraveScraper{
 		client: stealth.NewStealthClient(15 * time.Second),
 	}
 }
 
+// ID returns the protocol engine identifier for Brave.
 func (s *BraveScraper) ID() protocol.Engine {
 	return protocol.Engine_ENGINE_BRAVE
 }
 
+// Search performs a scrape of Brave Search results.
 func (s *BraveScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	// Strategy: Brave Search via the 'API-like' web endpoint
 	searchURL := fmt.Sprintf("https://search.brave.com/search?q=%s&offset=%d&source=web", url.QueryEscape(query), offset)

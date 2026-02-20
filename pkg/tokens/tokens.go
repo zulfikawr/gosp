@@ -1,3 +1,5 @@
+// Package tokens provides secure token generation for GOSP authentication.
+// It generates human-readable join tokens for worker-cluster authentication.
 package tokens
 
 import (
@@ -13,7 +15,8 @@ var words = []string{
 	"yellow", "zebra", "alpha", "bravo", "delta", "echo", "foxtrot", "golf",
 }
 
-// Generate human-readable join token
+// Generate creates a human-readable join token consisting of three random words.
+// The token is cryptographically secure and suitable for worker authentication.
 func Generate() (string, error) {
 	var result []string
 	for i := 0; i < 3; i++ {

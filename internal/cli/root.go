@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface for GOSP (Go OpenSearchProtocol).
+// It defines all available commands including master, worker, search, and status operations.
 package cli
 
 import (
@@ -9,12 +11,15 @@ import (
 	"github.com/zulfikawr/gosp/pkg/version"
 )
 
+// rootCmd is the base command for the GOSP CLI application.
 var rootCmd = &cobra.Command{
 	Use:     "gosp",
 	Short:   "GOSP (Go OpenSearchProtocol) - Distributed Search Orchestrator",
 	Version: version.AppVersion,
 }
 
+// Execute runs the root command and handles any execution errors.
+// This is the main entry point called from main.go.
 func Execute() {
 	rootCmd.Version = version.AppVersion
 	if err := rootCmd.Execute(); err != nil {

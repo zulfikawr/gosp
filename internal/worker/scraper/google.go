@@ -1,3 +1,5 @@
+// Package scraper provides implementations for various search engine scrapers.
+// Each scraper implements the Engine interface for consistent search result retrieval.
 package scraper
 
 import (
@@ -25,6 +27,7 @@ func NewGoogleScraper() *GoogleScraper {
 	}
 }
 
+// ID returns the protocol engine identifier for Google.
 func (s *GoogleScraper) ID() protocol.Engine {
 	return protocol.Engine_ENGINE_GOOGLE
 }
@@ -100,6 +103,7 @@ func (s *GoogleScraper) Search(query string, count int32, offset int32) ([]*prot
 	return nil, fmt.Errorf("zero results found (likely bot-detection page)")
 }
 
+// cleanGoogleURL extracts the actual destination URL from Google's redirect URL format.
 func cleanGoogleURL(link string) string {
 	if strings.HasPrefix(link, "/url?q=") {
 		u, err := url.Parse("https://www.google.com" + link)

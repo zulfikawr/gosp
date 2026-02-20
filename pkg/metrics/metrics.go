@@ -1,3 +1,5 @@
+// Package metrics provides Prometheus metrics for GOSP observability.
+// It defines counters, gauges, and histograms for monitoring cluster health and performance.
 package metrics
 
 import (

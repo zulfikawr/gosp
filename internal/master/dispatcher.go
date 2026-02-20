@@ -1,3 +1,5 @@
+// Package master provides the master node functionality for GOSP.
+// It handles worker coordination, task dispatching, and HTTP API serving.
 package master
 
 import (

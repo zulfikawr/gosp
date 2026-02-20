@@ -7,6 +7,7 @@ import (
 	"github.com/zulfikawr/gosp/pkg/version"
 )
 
+// versionCmd displays the current version of the GOSP application.
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of GOSP",

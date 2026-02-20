@@ -1,3 +1,5 @@
+// Package master provides the master node functionality for GOSP.
+// It handles worker coordination, task dispatching, and HTTP API serving.
 package master
 
 import (
@@ -13,12 +15,14 @@ import (
 	"github.com/zulfikawr/gosp/pkg/version"
 )
 
+// HTTPServer handles incoming HTTP requests for the master node.
 type HTTPServer struct {
 	app        *fiber.App
 	dispatcher *Dispatcher
 	aggregator *ResultAggregator
 }
 
+// NewHTTPServer creates a new HTTP server instance with the given dispatcher and aggregator.
 func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
@@ -35,11 +39,13 @@ func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 	return s
 }
 
+// setupRoutes configures the HTTP routes for the server.
 func (s *HTTPServer) setupRoutes() {
 	s.app.Get("/web/search", s.handleSearch)
 	s.app.Get("/cluster/status", s.handleClusterStatus)
 }
 
+// handleClusterStatus returns the current cluster status including connected workers.
 func (s *HTTPServer) handleClusterStatus(c *fiber.Ctx) error {
 	workers := s.dispatcher.registry.GetHealthyWorkers()
 	return c.JSON(fiber.Map{
@@ -49,6 +55,7 @@ func (s *HTTPServer) handleClusterStatus(c *fiber.Ctx) error {
 	})
 }
 
+// handleSearch processes incoming search requests and returns aggregated results.
 func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 	query := c.Query("q")
 	if query == "" {
@@ -161,6 +168,7 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 	return c.JSON(braveResp)
 }
 
+// Listen starts the HTTP server on the specified address.
 func (s *HTTPServer) Listen(addr string) error {
 	logger.Info("HTTP Master API listening", "addr", addr)
 	return s.app.Listen(addr)

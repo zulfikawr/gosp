@@ -1,3 +1,5 @@
+// Package master provides the master node functionality for GOSP.
+// It handles worker coordination, task dispatching, and HTTP API serving.
 package master
 
 import (
@@ -111,6 +113,7 @@ func (r *Registry) GetHealthyWorkers() []*WorkerNode {
 	return healthy
 }
 
+// GetWorker retrieves a worker node by its ID.
 func (r *Registry) GetWorker(id string) *WorkerNode {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -127,6 +130,7 @@ func (r *Registry) startPruner() {
 	}
 }
 
+// prune removes workers that have not sent heartbeats within the timeout period.
 func (r *Registry) prune() {
 	r.mu.Lock()
 	defer r.mu.Unlock()

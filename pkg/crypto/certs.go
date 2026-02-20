@@ -1,7 +1,8 @@
+// Package crypto provides cryptographic utilities for GOSP.
+// It includes certificate generation for mTLS cluster communication.
 package crypto
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -13,7 +14,7 @@ import (
 	"time"
 )
 
-// CertificatePair holds the PEM-encoded certificate and private key
+// CertificatePair holds the PEM-encoded certificate and private key.
 type CertificatePair struct {
 	Certificate []byte
 	PrivateKey  []byte

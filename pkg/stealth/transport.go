@@ -1,3 +1,5 @@
+// Package stealth provides anti-detection HTTP transport for web scraping.
+// It uses TLS fingerprint spoofing to evade bot detection mechanisms.
 package stealth
 
 import (
@@ -58,6 +60,7 @@ var userAgents = []string{
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 }
 
+// GetRandomUserAgent returns a random user agent string for request headers.
 func GetRandomUserAgent() string {
 	return userAgents[0]
 }

@@ -1,3 +1,5 @@
+// Package master provides the master node functionality for GOSP.
+// It handles worker coordination, task dispatching, and HTTP API serving.
 package master
 
 import (
@@ -59,6 +61,7 @@ func ToProtocolError(e protocol.ErrorCode, msg string) error {
 	return &protocolError{code: e, msg: msg}
 }
 
+// protocolError implements the error interface for protocol-specific errors.
 type protocolError struct {
 	code protocol.ErrorCode
 	msg  string
