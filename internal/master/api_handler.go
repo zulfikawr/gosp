@@ -10,6 +10,7 @@ import (
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/models"
 	"github.com/zulfikawr/gosp/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/version"
 )
 
 type HTTPServer struct {
@@ -44,7 +45,7 @@ func (s *HTTPServer) handleClusterStatus(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"active_workers": len(workers),
 		"workers":        workers,
-		"version":        "v0.1.0",
+		"version":        version.AppVersion,
 	})
 }
 

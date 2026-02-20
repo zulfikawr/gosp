@@ -17,6 +17,7 @@ import (
 	"github.com/zulfikawr/gosp/pkg/logger"
 	"github.com/zulfikawr/gosp/pkg/pid"
 	"github.com/zulfikawr/gosp/pkg/protocol"
+	"github.com/zulfikawr/gosp/pkg/version"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -162,7 +163,7 @@ func runWorkerService(id string) {
 	}
 
 	// NEW: Worker now uses the token from config
-	client := worker.NewClient(cfg.ID, "v0.1.0", cfg.MasterURL, engines, insecure.NewCredentials(), cfg.JoinToken)
+	client := worker.NewClient(cfg.ID, version.AppVersion, cfg.MasterURL, engines, insecure.NewCredentials(), cfg.JoinToken)
 
 	go func() {
 		for {

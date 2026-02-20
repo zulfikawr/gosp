@@ -1,0 +1,70 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION=${{ github.ref_name }}
+          LDFLAGS="-s -w -X 'github.com/zulfikawr/gosp/pkg/version.AppVersion=$VERSION'"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -trimpath -ldflags="$LDFLAGS" -o gosp-${{ matrix.goos }}-${{ matrix.goarch }}.exe ./cmd/gosp
+          else
+            go build -trimpath -ldflags="$LDFLAGS" -o gosp-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/gosp
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gosp-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: gosp-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes
+        run: |
+          awk "/^## \[${{ github.ref_name }}\]/{flag=1;next}/^## \[/{flag=0}flag" CHANGELOG.md > RELEASE_NOTES.md
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/gosp-*
+          body_path: RELEASE_NOTES.md

@@ -7,9 +7,13 @@ PROTO_DIR=proto
 PROTO_GEN_DIR=pkg/protocol
 LOG_DIR=logs
 
+# Version information
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+LDFLAGS=-s -w -X 'github.com/zulfikawr/gosp/pkg/version.AppVersion=$(VERSION)'
+
 # Go parameters
 GOCMD=go
-GOBUILD=$(GOCMD) build
+GOBUILD=$(GOCMD) build -trimpath -ldflags="$(LDFLAGS)"
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
