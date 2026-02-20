@@ -41,20 +41,21 @@ fi
 echo -e "Latest Version: ${GREEN}$LATEST_TAG${NC}"
 
 # 3. Construct Download URL
-# Expected Asset Name: gosp_Linux_x86_64.tar.gz (matching common Goreleaser defaults)
-# Adjusting to your specific release naming if different
-DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_TAG/${BINARY_NAME}_${OS}_${ARCH}.tar.gz"
+# Based on gosp/.github/workflows/release.yml naming: gosp-linux-amd64
+EXT=""
+if [ "$OS" == "windows" ]; then EXT=".exe"; fi
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_TAG/${BINARY_NAME}-${OS}-${ARCH}${EXT}"
 
-# 4. Download and Extract
+# 4. Download
 TEMP_DIR=$(mktemp -d)
 echo -e "Downloading: $DOWNLOAD_URL"
 
-if ! curl -L -o "$TEMP_DIR/gosp.tar.gz" "$DOWNLOAD_URL"; then
+if ! curl -L -o "$TEMP_DIR/$BINARY_NAME" "$DOWNLOAD_URL"; then
     echo -e "${RED}Error: Download failed. Check if a release exists for your OS/Arch.${NC}"
     exit 1
 fi
 
-tar -xzf "$TEMP_DIR/gosp.tar.gz" -C "$TEMP_DIR"
+chmod +x "$TEMP_DIR/$BINARY_NAME"
 
 # 5. Move to Install Directory
 echo -e "Installing to $INSTALL_DIR..."
