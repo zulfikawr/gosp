@@ -20,6 +20,13 @@ GOSP provides a free, open-source alternative to centralized search APIs (like B
 ## 🛠 Quick Start
 
 ### 1. Installation
+
+**One-Liner (Recommended):**
+```bash
+curl -sSL https://raw.githubusercontent.com/zulfikawr/gosp/main/scripts/install.sh | bash
+```
+
+**Build from Source:**
 Build the unified GOSP binary using the included Makefile:
 ```bash
 git clone https://github.com/zulfikawr/gosp
