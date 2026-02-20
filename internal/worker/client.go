@@ -57,7 +57,7 @@ func NewClient(id, version, masterAddr string, engines []protocol.Engine, creds 
 
 func (c *Client) Run(ctx context.Context) error {
 	var err error
-	
+
 	// Inject token into outgoing gRPC context
 	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", c.token)
 

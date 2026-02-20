@@ -65,11 +65,15 @@ func (s *GoogleScraper) Search(query string, count int32, offset int32) ([]*prot
 
 	// Parse results using standard mobile selectors
 	doc.Find("div.kCrYT").Each(func(i int, sel *goquery.Selection) {
-		if int32(len(results)) >= count { return }
-		
+		if int32(len(results)) >= count {
+			return
+		}
+
 		titleNode := sel.Find("h3")
-		if titleNode.Length() == 0 { return }
-		
+		if titleNode.Length() == 0 {
+			return
+		}
+
 		title := strings.TrimSpace(titleNode.Text())
 		linkNode := sel.Find("a").First()
 		link, exists := linkNode.Attr("href")
@@ -82,8 +86,8 @@ func (s *GoogleScraper) Search(query string, count int32, offset int32) ([]*prot
 
 		if exists && title != "" && strings.HasPrefix(link, "/url?q=") {
 			results = append(results, &protocol.ResultItem{
-				Title:       title, 
-				Url:         cleanGoogleURL(link), 
+				Title:       title,
+				Url:         cleanGoogleURL(link),
 				Description: strings.TrimSpace(snippet),
 			})
 		}

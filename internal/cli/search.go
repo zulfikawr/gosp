@@ -39,7 +39,7 @@ func init() {
 	searchCmd.Flags().BoolVarP(&searchMetadata, "metadata", "m", false, "Show OSP metadata")
 	searchCmd.Flags().StringVarP(&searchFormat, "format", "f", "table", "Output format (table, json)")
 	searchCmd.Flags().StringVarP(&searchProfile, "profile", "p", "main", "Master profile to use")
-	
+
 	searchCmd.MarkFlagRequired("query")
 	rootCmd.AddCommand(searchCmd)
 }
@@ -73,7 +73,7 @@ func runSearch() {
 	if resp.StatusCode != http.StatusOK {
 		var errData map[string]string
 		json.Unmarshal(body, &errData)
-		
+
 		fmt.Printf("❌ Error: The Master is online, but the search failed: %s\n", errData["error"])
 		if resp.StatusCode == 503 {
 			fmt.Println("👉 Solution: A brain needs hands! Ensure a worker is connected with: 'gosp worker run'")

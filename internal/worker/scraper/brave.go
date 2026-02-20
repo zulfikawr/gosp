@@ -29,9 +29,11 @@ func (s *BraveScraper) ID() protocol.Engine {
 func (s *BraveScraper) Search(query string, count int32, offset int32) ([]*protocol.ResultItem, error) {
 	// Strategy: Brave Search via the 'API-like' web endpoint
 	searchURL := fmt.Sprintf("https://search.brave.com/search?q=%s&offset=%d&source=web", url.QueryEscape(query), offset)
-	
+
 	req, err := http.NewRequest("GET", searchURL, nil)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	req.Header.Set("User-Agent", stealth.GetRandomUserAgent())
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -40,7 +42,9 @@ func (s *BraveScraper) Search(query string, count int32, offset int32) ([]*proto
 	req.Header.Set("Sec-Fetch-Site", "none")
 
 	resp, err := s.client.Do(req)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
@@ -48,13 +52,17 @@ func (s *BraveScraper) Search(query string, count int32, offset int32) ([]*proto
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	var results []*protocol.ResultItem
 
 	// Brave's template is very consistent. Let's use more robust selectors.
 	doc.Find(".snippet").Each(func(i int, sel *goquery.Selection) {
-		if int32(len(results)) >= count { return }
+		if int32(len(results)) >= count {
+			return
+		}
 
 		title := strings.TrimSpace(sel.Find(".snippet-title, .snippet-header").Text())
 		link, _ := sel.Find("a").First().Attr("href")

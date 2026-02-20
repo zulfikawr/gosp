@@ -57,11 +57,11 @@ func init() {
 			survey.AskOne(&survey.Input{Message: "Master Name:", Default: "main"}, &cfg.Name)
 			survey.AskOne(&survey.Input{Message: "HTTP Port:", Default: "19000"}, &cfg.HTTPPort)
 			survey.AskOne(&survey.Input{Message: "gRPC Port:", Default: "19004"}, &cfg.GRPCPort)
-			
+
 			// Generate persistent join token
 			token, _ := tokens.Generate()
 			cfg.JoinToken = token
-			
+
 			config.SaveMaster(cfg)
 			fmt.Println("✅ Master profile created.")
 			fmt.Printf("🔑 Join Token: %s\n", cfg.JoinToken)
@@ -75,7 +75,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			name := "main"
-			if len(args) > 0 { name = args[0] }
+			if len(args) > 0 {
+				name = args[0]
+			}
 			if !masterNoDaemon {
 				startMasterDaemon(name)
 				return
@@ -92,7 +94,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			name := "main"
-			if len(args) > 0 { name = args[0] }
+			if len(args) > 0 {
+				name = args[0]
+			}
 			stopService("master", name)
 		},
 	})
@@ -141,7 +145,9 @@ func (s *GRPCServer) Register(ctx context.Context, req *protocol.RegisterRequest
 	}
 	p, ok := peer.FromContext(ctx)
 	remoteAddr := "unknown"
-	if ok { remoteAddr = p.Addr.String() }
+	if ok {
+		remoteAddr = p.Addr.String()
+	}
 	s.registry.Register(req, remoteAddr)
 	return &protocol.RegisterResponse{Success: true, Message: "Registered"}, nil
 }
@@ -151,10 +157,14 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 		return err
 	}
 	status, err := stream.Recv()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	workerID := status.WorkerId
 	worker := s.registry.GetWorker(workerID)
-	if worker == nil { return fmt.Errorf("worker %s not registered", workerID) }
+	if worker == nil {
+		return fmt.Errorf("worker %s not registered", workerID)
+	}
 
 	logger.Info("worker connected via gRPC stream", "worker_id", workerID)
 	defer s.registry.Deregister(workerID)
@@ -163,18 +173,27 @@ func (s *GRPCServer) Connect(stream protocol.SearchService_ConnectServer) error 
 	go func() {
 		for {
 			status, err := stream.Recv()
-			if err != nil { errChan <- err; return }
+			if err != nil {
+				errChan <- err
+				return
+			}
 			s.registry.UpdateStatus(workerID, status)
-			if status.CompletedTask != nil { s.dispatcher.HandleResponse(status.CompletedTask) }
+			if status.CompletedTask != nil {
+				s.dispatcher.HandleResponse(status.CompletedTask)
+			}
 		}
 	}()
 	go func() {
 		for {
 			select {
 			case cmd := <-worker.CommandChan:
-				if err := stream.Send(cmd); err != nil { errChan <- err; return }
+				if err := stream.Send(cmd); err != nil {
+					errChan <- err
+					return
+				}
 			case <-stream.Context().Done():
-				errChan <- stream.Context().Err(); return
+				errChan <- stream.Context().Err()
+				return
 			}
 		}
 	}()
@@ -239,7 +258,7 @@ func runMasterService(name string) {
 		dispatcher: disp,
 		token:      cfg.JoinToken,
 	})
-	
+
 	go func() {
 		logger.Info("gRPC Master listening", "port", cfg.GRPCPort, "profile", name)
 		if err := grpcServer.Serve(lis); err != nil {

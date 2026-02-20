@@ -17,7 +17,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			name := "main"
-			if len(args) > 0 { name = args[0] }
+			if len(args) > 0 {
+				name = args[0]
+			}
 			showMasterStatus(name)
 		},
 	})
@@ -28,7 +30,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			id := "local-01"
-			if len(args) > 0 { id = args[0] }
+			if len(args) > 0 {
+				id = args[0]
+			}
 			showWorkerStatus(id)
 		},
 	})
@@ -50,13 +54,15 @@ func showMasterStatus(name string) {
 	fmt.Printf("GOSP MASTER: %s\n", name)
 	fmt.Println("--------------------")
 	statusStr := "OFFLINE"
-	if isRunning { statusStr = "ONLINE" }
+	if isRunning {
+		statusStr = "ONLINE"
+	}
 	fmt.Printf("Process:    %s\n", statusStr)
 	fmt.Printf("HTTP Port:  %s\n", cfg.HTTPPort)
 	fmt.Printf("gRPC Port:  %s\n", cfg.GRPCPort)
 
-	if isRunning { 
-		fetchClusterStatus(cfg.HTTPPort) 
+	if isRunning {
+		fetchClusterStatus(cfg.HTTPPort)
 	}
 }
 
@@ -73,7 +79,7 @@ func fetchClusterStatus(port string) {
 
 	fmt.Println("CLUSTER OVERVIEW")
 	fmt.Printf("Active Workers: %v\n", data["active_workers"])
-	
+
 	workers, ok := data["workers"].([]interface{})
 	if ok && len(workers) > 0 {
 		fmt.Printf("%-20s | %-15s | %-10s\n", "Worker ID", "Region", "Status")
@@ -104,7 +110,9 @@ func showWorkerStatus(id string) {
 	fmt.Printf("GOSP WORKER: %s\n", id)
 	fmt.Println("--------------------")
 	statusStr := "OFFLINE"
-	if isRunning { statusStr = "ONLINE (Connected to "+cfg.MasterURL+")" }
+	if isRunning {
+		statusStr = "ONLINE (Connected to " + cfg.MasterURL + ")"
+	}
 	fmt.Printf("Status: %s\n", statusStr)
 	fmt.Printf("Region: %s\n", cfg.Region)
 }

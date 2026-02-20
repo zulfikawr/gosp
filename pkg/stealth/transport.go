@@ -31,9 +31,9 @@ func NewStealthClient(timeout time.Duration) *http.Client {
 			// which are common when scraping from datacenter IPs.
 			uConn := utls.UClient(conn, &utls.Config{
 				ServerName: host,
-				NextProtos: []string{"http/1.1"}, 
+				NextProtos: []string{"http/1.1"},
 			}, utls.HelloChrome_120)
-			
+
 			if err := uConn.Handshake(); err != nil {
 				conn.Close()
 				return nil, err
@@ -45,7 +45,7 @@ func NewStealthClient(timeout time.Duration) *http.Client {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		// Explicitly disable H2 to prevent transport mismatches
-		ForceAttemptHTTP2:     false,
+		ForceAttemptHTTP2: false,
 	}
 
 	return &http.Client{
@@ -59,5 +59,5 @@ var userAgents = []string{
 }
 
 func GetRandomUserAgent() string {
-	return userAgents[0] 
+	return userAgents[0]
 }

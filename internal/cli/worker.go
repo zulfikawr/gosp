@@ -54,12 +54,12 @@ func init() {
 			survey.AskOne(&survey.Input{Message: "Master gRPC URL:", Default: "localhost:19004"}, &cfg.MasterURL)
 			survey.AskOne(&survey.Input{Message: "Region:", Default: "US-Cloud"}, &cfg.Region)
 			survey.AskOne(&survey.Input{Message: "Join Token (Required):"}, &cfg.JoinToken)
-			
+
 			if cfg.JoinToken == "" {
 				fmt.Println("❌ Error: A Join Token is required to connect to a Master.")
 				os.Exit(1)
 			}
-			
+
 			config.SaveWorker(cfg)
 			fmt.Println("✅ Worker profile created.")
 		},
@@ -72,7 +72,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			id := "local-01"
-			if len(args) > 0 { id = args[0] }
+			if len(args) > 0 {
+				id = args[0]
+			}
 			if !workerNoDaemon {
 				startWorkerDaemon(id)
 				return
@@ -90,7 +92,9 @@ func init() {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			id := "local-01"
-			if len(args) > 0 { id = args[0] }
+			if len(args) > 0 {
+				id = args[0]
+			}
 			stopService("worker", id)
 		},
 	})
@@ -128,7 +132,7 @@ func runWorkerService(id string) {
 	cfg, err := config.LoadWorker(id)
 	if err != nil {
 		fmt.Printf("❌ Error: Worker profile '%s' not found.\n", id)
-		
+
 		createNow := false
 		survey.AskOne(&survey.Confirm{Message: fmt.Sprintf("Would you like to create profile '%s' now?", id), Default: true}, &createNow)
 		if createNow {
@@ -159,7 +163,7 @@ func runWorkerService(id string) {
 
 	// NEW: Worker now uses the token from config
 	client := worker.NewClient(cfg.ID, "v0.1.0", cfg.MasterURL, engines, insecure.NewCredentials(), cfg.JoinToken)
-	
+
 	go func() {
 		for {
 			err := client.Run(ctx)
