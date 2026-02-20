@@ -2,6 +2,7 @@
 
 # Binaries
 bin/
+/gosp
 *.exe
 *.exe~
 *.dll
@@ -18,6 +19,9 @@ vendor/
 # Environment files
 .env
 *.env.local
+*.pem
+*.crt
+*.key
 
 # IDE Specific
 .idea/

@@ -294,7 +294,16 @@ func runMasterService(name string) {
 	}()
 
 	httpServer := master.NewHTTPServer(disp, aggr)
-	go httpServer.Listen(":" + cfg.HTTPPort)
+	go func() {
+		// Check for certs in current directory
+		if _, err := os.Stat("cert.pem"); err == nil {
+			if _, err := os.Stat("key.pem"); err == nil {
+				httpServer.ListenTLS(":"+cfg.HTTPPort, "cert.pem", "key.pem")
+				return
+			}
+		}
+		httpServer.Listen(":" + cfg.HTTPPort)
+	}()
 
 	<-ctx.Done()
 	logger.Info("Stopping Master...")

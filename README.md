@@ -58,6 +58,49 @@ Dive deeper into the GOSP ecosystem:
 *   [**Security & Protocol**](docs/security.md): mTLS and Join Token technical details.
 *   [**API Specification**](docs/api.md): Brave Search API compatibility and Metadata flags.
 *   [**Scraping Engines**](docs/scraping.md): How Google, Brave, and DuckDuckGo are handled.
+*   [**OpenClaw Integration**](docs/openclaw.md): Use GOSP as a free Brave Search API replacement.
+
+---
+
+## 🦞 GOSP as a Brave Search API Alternative (OpenClaw Setup)
+
+You can use GOSP to power AI agents (like OpenClaw) without paying for API keys by "hijacking" the Brave Search API endpoint.
+
+### 1. Configure System Redirect
+Since AI agents hardcode the Brave API URL, you must redirect that traffic to your local GOSP Master.
+Add this line to your `/etc/hosts` file:
+```text
+127.0.0.1 api.search.brave.com
+```
+
+### 2. Start GOSP Master on Port 443
+The Brave API expects HTTPS (Port 443). Start the Master with root privileges:
+```bash
+sudo ./gosp master run --addr 0.0.0.0:443
+```
+
+### 3. Start GOSP Worker
+```bash
+./gosp worker run --master localhost:443 --id local-ubuntu
+```
+
+### 4. Configure OpenClaw
+GOSP implements the Brave-compatible schema. Update your `~/.openclaw/openclaw.json`:
+```json
+{
+  "tools": {
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "brave",
+        "apiKey": "gosp_free_tier"
+      }
+    }
+  }
+}
+```
+
+**Why this works:** OpenClaw will try to talk to `api.search.brave.com:443`. Your system will redirect that call to your GOSP Master running locally on port 443. GOSP then processes the search for free using its distributed workers.
 
 ---
 

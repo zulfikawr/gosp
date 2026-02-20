@@ -42,6 +42,8 @@ func NewHTTPServer(d *Dispatcher, a *ResultAggregator) *HTTPServer {
 // setupRoutes configures the HTTP routes for the server.
 func (s *HTTPServer) setupRoutes() {
 	s.app.Get("/web/search", s.handleSearch)
+	// Brave API Compatibility Route
+	s.app.Get("/res/v1/web/search", s.handleSearch)
 	s.app.Get("/cluster/status", s.handleClusterStatus)
 }
 
@@ -172,4 +174,10 @@ func (s *HTTPServer) handleSearch(c *fiber.Ctx) error {
 func (s *HTTPServer) Listen(addr string) error {
 	logger.Info("HTTP Master API listening", "addr", addr)
 	return s.app.Listen(addr)
+}
+
+// ListenTLS starts the HTTP server with TLS on the specified address.
+func (s *HTTPServer) ListenTLS(addr, certFile, keyFile string) error {
+	logger.Info("HTTPS Master API listening", "addr", addr)
+	return s.app.ListenTLS(addr, certFile, keyFile)
 }

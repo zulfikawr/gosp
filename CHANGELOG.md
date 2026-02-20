@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-21
+
+### Added
+- **AI Agent Integration:** Added `docs/openclaw.md` for seamless, free Brave Search API "hijacking" with OpenClaw.
+- **TLS Support:** Integrated `ListenTLS` in HTTPServer to allow Master nodes to serve over Port 443 with custom certificates.
+- **Brave API Compatibility:** Added explicit `/res/v1/web/search` route for 1:1 drop-in compatibility with the official Brave Search API endpoint.
+- **Protocol Interception:** Added support for local domain redirection (`api.search.brave.com`) to enable zero-cost search for AI agents.
+
+### Fixed
+- **Daemon Spawning:** Refactored background process logic to use `os.Executable()` for more reliable binary resolution.
+- **File Handling:** Added proper error checking for log file creation and initialization during daemon startup.
+- **Security:** Updated `.gitignore` to prevent accidental leakage of local TLS `.pem` certificates.
+
+### Changed
+- **CLI Flags:** Enhanced `master run` to automatically detect and use `cert.pem`/`key.pem` if present in the working directory.
+
 ## [0.1.0] - 2026-02-20
 
 ### Added
