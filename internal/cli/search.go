@@ -11,10 +11,12 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/zulfikawr/gosp/pkg/config"
 	"github.com/zulfikawr/gosp/pkg/models"
+	"golang.org/x/term"
 )
 
 var (
@@ -98,16 +100,41 @@ func runSearch() {
 	var searchResp models.SearchResponse
 	json.Unmarshal(body, &searchResp)
 
-	fmt.Printf("GOSP Results for: %s\n", searchQuery)
-	separator := "----------------------------------------------------------------------------------------------------"
-	fmt.Println(separator)
-	fmt.Printf("%-3s | %-50s | %s\n", "#", "Title", "URL")
-	fmt.Println(separator)
-	for i, res := range searchResp.Web.Results {
-		title := truncate(res.Title, 50)
-		fmt.Printf("%-3d | %-50s | %s\n", i+1, title, res.URL)
+	fmt.Printf("GOSP Results for: %s\n\n", searchQuery)
+
+	// Get terminal width for dynamic text wrapping
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		width = 120 // Default fallback
 	}
-	fmt.Println(separator)
+	// Reserve space for tree chars (4) + URL/desc indentation
+	textWidth := width - 4
+
+	for i, res := range searchResp.Web.Results {
+		// Use tree branch characters
+		branch := "├──"
+		connector := "│"
+		if i == len(searchResp.Web.Results)-1 {
+			branch = "└──"
+			connector = " "
+		}
+		fmt.Printf("%s %s\n", branch, res.Title)
+		fmt.Printf("%s   %s\n", connector, res.URL)
+		if res.Description != "" {
+			desc := truncateDescription(res.Description, 250)
+			// Word-wrap description based on terminal width
+			wrapped := wrapText(desc, textWidth)
+			for _, line := range wrapped {
+				fmt.Printf("%s   %s\n", connector, line)
+			}
+		}
+		// Add vertical line connector between items (not after last)
+		if i < len(searchResp.Web.Results)-1 {
+			fmt.Printf("│\n")
+		} else {
+			fmt.Println()
+		}
+	}
 }
 
 // truncate shortens a string to n characters, adding ellipsis if truncated.
@@ -117,4 +144,39 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return string(runes[:n-3]) + "..."
+}
+
+// truncateDescription shortens a description to n characters, adding ellipsis if truncated.
+// It also removes extra whitespace and newlines.
+func truncateDescription(s string, n int) string {
+	// Normalize whitespace
+	s = strings.TrimSpace(strings.Join(strings.Fields(s), " "))
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n-3]) + "..."
+}
+
+// wrapText wraps text at the specified width, breaking at word boundaries.
+func wrapText(s string, width int) []string {
+	words := strings.Fields(s)
+	if len(words) == 0 {
+		return []string{s}
+	}
+
+	var lines []string
+	currentLine := words[0]
+
+	for _, word := range words[1:] {
+		if len(currentLine)+1+len(word) <= width {
+			currentLine += " " + word
+		} else {
+			lines = append(lines, currentLine)
+			currentLine = word
+		}
+	}
+	lines = append(lines, currentLine)
+
+	return lines
 }
